@@ -14,7 +14,7 @@ app.use(cors())
 const portServer = process.env.PORT_SERVER_RUNNING
 
 // Connected on database ft mongodb
-mongoose.connect(process.env.URL_MONGOOSE, { useNewUrlParser: true, useUnifiedTopology: true })
+mongoose.connect(process.env.URL_MONGOOSE)
 .then(() => {
     console.log('Successfully connect on database')
 })
@@ -41,19 +41,13 @@ const requestRouter = require('./src/routes/requestRouters')
 const shopRouter = require('./src/routes/shopRouters')
 const productRouter = require('./src/routes/productRouters')
 const accountRouter = require('./src/routes/accountRouters')
-const historyRouter = require('./src/routes/historyRouters')
-const subscribeRouter = require('./src/routes/subscribeRouters')
 const paymentRouter = require('./src/routes/paymentRouters')
-const revenueRouter = require('./src/routes/revenueRouters')
 
 app.use('/account', accountRouter)
 app.use('/request', checkToken, requestRouter)
 app.use('/shop', checkToken, shopRouter)
 app.use('/product', checkToken, productRouter)
-app.use('/history', checkToken, historyRouter)
-app.use('/subscribe', checkToken, subscribeRouter)
 app.use('/payment', paymentRouter)
-app.use('/revenue', revenueRouter)
 
 app.get('/test', (req, res) => {
     res.send('test success!')   
