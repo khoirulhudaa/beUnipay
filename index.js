@@ -14,13 +14,14 @@ app.use(cors())
 const portServer = process.env.PORT_SERVER_RUNNING
 
 // Connected on database ft mongodb
-mongoose.connect(process.env.URL_MONGOOSE)
+mongoose.connect(process.env.URL_MONGOOSE, { useNewUrlParser: true, useUnifiedTopology: true })
 .then(() => {
     console.log('Successfully connect on database')
 })
 .catch((error) => {
     console.log(error)
 })
+
 
 // Middleware untuk mengatur timeout
 app.use((req, res, next) => {
