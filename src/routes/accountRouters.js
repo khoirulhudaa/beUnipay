@@ -3,20 +3,20 @@ const accountController = require('../controllers/accountControllers')
 const router = express.Router()
 
 // Sign consumer and seller
-router.post('/signup', accountController.signUpSeller)
-router.post('/signin', accountController.signInSeller)
+router.post('/signup', accountController.signUp)
+router.post('/signin', accountController.signIn)
 
 // Get list users
-router.get('/list/user/:user_id', accountController.getAllConsumer)
+router.get('/list/:user_id', accountController.getAccountById)
 
 // Delete Account
-router.delete('/user/:user_id', accountController.removeSeller)
+router.delete('/:user_id', accountController.removeUser)
 
 // Update Account
-router.put('/user/:user_id', accountController.upload.single('seller_image'), accountController.updateSellerAccount)
+router.put('/:user_id', accountController.upload.single('seller_image'), accountController.updateUserAccount)
 
 // Reset password
-router.post('/user/forgot-password', accountController.forgotPassword)
-router.put('/user/reset-password/:token', accountController.resetPassword)
+router.post('/forgot-password', accountController.forgotPassword)
+router.put('/reset-password/:token', accountController.resetPassword)
 
 module.exports = router

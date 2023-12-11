@@ -1,7 +1,5 @@
-const historyConsumeModel = require('../models/historyInConsumerModel');
-const historySellerModel = require('../models/historyInSellerModel');
-const paymentMethodModel = require('../models/methodePayment');
-const revenueModel = require('../models/requestModel')
+const historyTransaction = require('../models/historyTransaction');
+const User = require('../models/userModel')
 const crypto = require('crypto')
 const dotenv = require('dotenv');
 dotenv.config();
@@ -9,7 +7,6 @@ dotenv.config();
 const { Payout: PayoutClient, Invoice: InvoiceClient  } = require('xendit-node');
 const xenditPayoutClient = new PayoutClient({ secretKey: 'xnd_development_LHt55GITF5Fri0xE3vF5Akd28vtDkpLNs2Y1Xcz4gOLOCPJe4hmTmujzagqY4O7' });
 const xenditInvoice = new InvoiceClient({secretKey: 'xnd_development_LHt55GITF5Fri0xE3vF5Akd28vtDkpLNs2Y1Xcz4gOLOCPJe4hmTmujzagqY4O7'})
-
 
 const handlePaymentCallback = async (req, res) => {
     try {
@@ -27,11 +24,11 @@ const handlePaymentCallback = async (req, res) => {
 const disbursementPayment = async (req, res) => {
     try {
       const {
-        revenue_id,
+        user_id,
         amount,
         channelCode,
         accountNumber,
-        accountHolderName,
+        fullName,
       } = req.body;
 
       const referenceId = crypto.randomBytes(20).toString('hex')
@@ -40,9 +37,9 @@ const disbursementPayment = async (req, res) => {
         "amount" : amount,
         "channelProperties" : {
           "accountNumber" : String(accountNumber),
-          "accountHolderName" : accountHolderName
+          "accountHolderName" : fullName
         },
-        "description" : "Withdraw",
+        "description" : "Withdraw (balance)",
         "currency" : "IDR",
         "type" : "DIRECT_DISBURSEMENT",
         "referenceId" : referenceId,
@@ -55,12 +52,12 @@ const disbursementPayment = async (req, res) => {
       })
         
       if(response) {
-        const filter = { revenue_id }
-        const existingData = await revenueModel.findOne(filter);
+        const filter = { user_id }
+        const existingData = await User.findOne(filter);
         
         if (existingData) {
-          const set = { balance: existingData.balance - (amount - 3000) };
-          await revenueModel.updateOne(filter, set)
+          const set = { balance: existingData.balance - amount };
+          await User.updateOne(filter, set)
           return res.json({status: 200, message: 'Withdraw successfully!!' , data: response});
         }
       }
@@ -75,15 +72,12 @@ const createPayment = async (req, res) => {
 
     const {
       amount,
-      products, 
-      accountHolderName,
-      telephone_consumer,
-      consumer_id,
-      email_consumer,
-      post_code,
+      fullName,
+      number_telephone,
+      email,
+      user_id,
       description,
-      address,
-      shop_id
+      typePayment
     } = req.body;
 
     const referenceId = crypto.randomBytes(5).toString('hex')
@@ -91,11 +85,11 @@ const createPayment = async (req, res) => {
     const data = {
       "amount" : amount,
       "invoiceDuration" : 172800,
-      "externalId" : referenceId+'__'+shop_id,
+      "externalId" : user_id,
       "description" : description,
       "currency" : "IDR",
       "reminderTime" : 1,
-      "successRedirectUrl": "https://elect-shop.vercel.app/successPayment",
+      "successRedirectUrl": "https://unipay-ikmi.vercel.app/successPayment",
     }
 
     const response = await xenditInvoice.createInvoice({
@@ -105,23 +99,18 @@ const createPayment = async (req, res) => {
     if(response) {
       const dataHistory = {
           history_id: referenceId,
-          products,
-          post_code,
-          email_consumer,
+          email,
           status: 'PENDING',
-          address,
           description,
-          shop_id,
-          consumer_name: accountHolderName,
-          telephone_consumer,
-          consumer_id
+          fullName,
+          number_telephone,
+          user_id,
+          type_payment: typePayment
       }
 
-      const consumerHistory = new historyConsumeModel(dataHistory)
-      const sellerHistory = new historySellerModel(dataHistory)
+      const historyTransactionSave = new historyTransaction(dataHistory)
 
-      await consumerHistory.save()
-      await sellerHistory.save()
+      await historyTransactionSave.save()
       
       return res.json({ status: 200, message: 'Your payment is still pending!', data: response})
 
@@ -137,32 +126,30 @@ const createPayment = async (req, res) => {
 const updateDatabase = async (external_id, data) => {
   try {
     
-      const filterCharacter = external_id.split('__')
-      const resultFilterCharacters = filterCharacter[1]
-      const resultFilterCharacters2 = filterCharacter[0]
-      
-      const filter = { history_id: resultFilterCharacters2 };
-      const filterRevenue = { revenue_id: resultFilterCharacters };
+      const filterBalance = { user_id: external_id };
 
-      console.log('history_id', external_id)
-      console.log('revenue_id', resultFilterCharacters)
-      console.log('status', data.status)
-
-      const dataRevenue = await revenueModel.findOne(filterRevenue)
-      if(!dataRevenue) {
-        return { status: 404, message: 'Revenue not found!' };
+      const dataBalance = await User.findOne(filterBalance)
+      if(!dataBalance) {
+        return { status: 404, message: 'User not found!' };
       }
 
-      const updateDataRevenue = {
-        revenue: dataRevenue.revenue + data.amount,
-        balance: dataRevenue.balance + data.amount,
+      const addBalanceWithTopUp = {
+        balance: dataBalance.balance + data.amount,
       };
 
+      const minusBalanceWithTransaction = {
+        balance: dataBalance.balance - data.amount,
+      };
       
       if(data.status === 'PAID') {
-        await revenueModel.updateOne(filterRevenue, updateDataRevenue);
-        await historyConsumeModel.updateOne(filter, { status: 'PAID' })
-        await historySellerModel.updateOne(filter, { status: 'PAID' })
+       
+        if(data.description === 'TOP-UP') {
+          await User.updateOne(filterBalance, addBalanceWithTopUp);
+        }else {
+          await User.updateOne(filterBalance, minusBalanceWithTransaction);
+        }
+
+        await historyTransaction.updateOne(filter, { status: 'PAID' })
         return { status: 200, message: 'Success update status payment!' }
       }else {
         console.log('NOT PAID!')
@@ -176,9 +163,9 @@ const updateDatabase = async (external_id, data) => {
   
 const getAllPaymentByShop = async (req, res) => {
   try {
-      const { shop_id } = req.params
+      const { user_id } = req.params
       
-      const getPayment = await paymentMethodModel.findOne({ shop_id })
+      const getPayment = await paymentMethodModel.findOne({ user_id })
       
       if(getPayment === 0) return res.json({ status: 404, message: 'Data payment not found!' })
 
@@ -191,7 +178,7 @@ const getAllPaymentByShop = async (req, res) => {
 
 const updatePaymentMethod = async (req, res) => {
   try {
-    const { shop_id } = req.params
+    const { user_id } = req.params
     const updates = req.body;
 
     if (!updates || !Array.isArray(updates)) {
@@ -201,7 +188,7 @@ const updatePaymentMethod = async (req, res) => {
     const updatePromises = updates.map(async (update) => {
         const { bank_code, account_number, isEnabled } = update;
         const result = await paymentMethodModel.updateOne(
-            { shop_id: shop_id, 'payments.bank_code': bank_code },
+            { user_id: user_id, 'payments.bank_code': bank_code },
             { $set: { 
               'payments.$.account_number': account_number ,
               'payments.$.isEnabled': isEnabled ,

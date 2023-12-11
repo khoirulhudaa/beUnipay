@@ -1,11 +1,11 @@
 const mongoose = require('mongoose')
 
 const ConsumerSchema = new mongoose.Schema({
-    consumer_name: {
+    fullName: {
         type: String,
         required: true
     },
-    email_consumer: {
+    email: {
         type: String,
         required: true,
         unique: true,
@@ -22,7 +22,7 @@ const ConsumerSchema = new mongoose.Schema({
         type: String,
         required: true
     },
-    consumer_id: {
+    user_id: {
         type: String,
         required: true
     },
@@ -31,21 +31,29 @@ const ConsumerSchema = new mongoose.Schema({
         required: true,
         default: 'Male'
     },
-    telephone_consumer: {
+    number_telephone: {
         type: String,
         required: true,
     },
-    post_code: {
-        type: Number,
+    NIK: {
+        type: String,
         default: 0,
     },
-    address: {
+    NIM: {
         type: String,
         default: '-'
     },
-    consumer_image: {
+    prodi: {
         type: String,
         default: 'default.png'
+    },
+    type_image: {
+        type: String,
+        default: 'Man1'
+    },
+    resetTokenPassword: {
+        type: String,
+        default: ''
     }
 })
 

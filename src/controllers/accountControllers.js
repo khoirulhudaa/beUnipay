@@ -1,6 +1,5 @@
 const multer = require('multer');
-const Consumer = require('../models/consumerModel')
-const Seller = require('../models/sellerModel')
+const User = require('../models/userModel')
 const bcrypt = require('bcryptjs')
 const jwt = require('jsonwebtoken')
 const fs = require('fs')
@@ -42,310 +41,131 @@ const upload = multer({
     },
 });
 
-const signUpConsumer = async (req, res) => {
+const signUp = async (req, res) => {
     try {
-        const { email_consumer, consumer_name, gender, telephone_consumer, password } = req.body
+        const { email, password, gender, number_telephone, NIK, NIM, prodi, fullName } = req.body
        
-        const equalConsumer = await Consumer.findOne({ email_consumer })
-        if(equalConsumer) return res.json({ status: 400, message: 'Email already exist!' })
+        const equalUser = await User.findOne({ email })
+        if(equalUser) return res.json({ status: 400, message: 'Email already exist!' })
  
-        function generateRandomString(length) {
-            const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-            let result = '';
-          
-            for (let i = 0; i < length; i++) {
-              const randomIndex = Math.floor(Math.random() * characters.length);
-              result += characters.charAt(randomIndex);
-            }
-          
-            return result;
-        }
-          
-        const randomString = generateRandomString(5);
+        const id = crypto.randomBytes(20).toString('hex')
 
         const salt = await bcrypt.genSalt(10)
         const passwordHashGenerate = await bcrypt.hash(password, salt)
 
-        const newConsumer = new Consumer({
-            consumer_name,
-            email_consumer,
+        const newUser = new User({
+            fullName,
+            email,
             password: passwordHashGenerate,
             gender,
-            consumer_id: randomString,
-            telephone_consumer
+            user_id: id,
+            number_telephone,
+            NIK,
+            NIM, 
+            prodi
         })
 
-        await newConsumer.save()
-        return res.json({ status: 200, message: 'Success Register!' })
+        await newUser.save()
+        return res.json({ status: 200, message: 'Successfully signup!' })
 
     } catch (error) {
-        return res.json({ status: 500, message: 'Failed to signUp', error: error });
+        return res.json({ status: 500, message: 'Failed to signup!', error: error });
     }
 }
 
-const signInConsumer = async (req, res) => {
+const signIn = async (req, res) => {
     try {
-        const {email_consumer, password} = req.body
-        const consumer = await Consumer.findOne({ email_consumer })
-        if(!consumer) return res.json({ status: 404, message: 'User not found!' })
+        const {email, password} = req.body
+        const user = await User.findOne({ email })
+        if(!user) return res.json({ status: 404, message: 'User not found!' })
 
-        const isMatch = await bcrypt.compare(password, consumer.password);
+        const isMatch = await bcrypt.compare(password, User.password);
 
         if (!isMatch) {
-            return res.json({ status: 401, message: 'Incorrect password' });
+            return res.json({ status: 401, message: 'Incorrect password!' });
         }
 
-        const token = jwt.sign({ consumer_id: consumer.consumer_id }, 'ElectShop', { expiresIn: '2h' });
+        const token = jwt.sign({ user_id: User.user_id }, 'ElectShop', { expiresIn: '2h' });
         return res.json({ status: 200, token, data: consumer });
         
     } catch (error) {
-        return res.json({ status: 500, message: 'Failed to signIn', error: error.message });
+        return res.json({ status: 500, message: 'Failed to signin!', error: error.message });
     }
 } 
 
-// Seller Authentication
-
-const signUpSeller = async (req, res) => {
-    try {
-        const { email_seller, seller_name, gender, telephone_seller, password } = req.body
-
-        const equalSeller = await Seller.findOne({ email_seller })
-        if(equalSeller) return res.json({ status: 401, message: 'Email already exist!' })
-
-        function generateRandomString(length) {
-            const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-            let result = '';
-          
-            for (let i = 0; i < length; i++) {
-              const randomIndex = Math.floor(Math.random() * characters.length);
-              result += characters.charAt(randomIndex);
-            }
-          
-            return result;
-        }
-          
-        const randomString = generateRandomString(5);
-
-        const salt = await bcrypt.genSalt(10)
-        const passwordHashGenerate = await bcrypt.hash(password, salt)
-
-        const newSeller = new Seller({
-            seller_name,
-            email_seller,
-            password: passwordHashGenerate,
-            gender,
-            seller_id: randomString,
-            telephone_seller
-        })
-
-        const create = await newSeller.save()
-        
-        if(!create) return res.json({ status: 401, message: 'Failed create account seller!', data: req.body })
-        return res.json({ status: 200, message: 'Successfully register!', data: req.body })
-
-    } catch (error) {
-        return res.json({ status: 500, message: 'Failed to signUp', error: error.message });
-    }
-}
-
-// SignIn Account Seller
-
-const signInSeller = async (req, res) => {
-    try {
-        const { email_seller, password } = req.body;
-
-        if (!email_seller || !password) {
-            return res.json({ status: 400, message: 'Invalid input' });
-        }
-
-        const seller = await Seller.findOne({ email_seller });
-        if (!seller) {
-            return res.json({ status: 404, message: 'Seller not found!' });
-        }
-
-        const isMatch = await bcrypt.compare(password, seller.password);
-        if (!isMatch) {
-            return res.json({ status: 401, message: 'Incorrect password' });
-        }
-
-        const token = jwt.sign({ seller_id: seller.seller_id }, 'ElectShop', { expiresIn: '1h' });
-        if (!token) {
-            return res.json({ status: 500, message: 'Error in token' });
-        }
-
-        return res.json({ status: 200, token, data: seller });
-
-    } catch (error) {
-        return res.json({ status: 500, message: 'Server error', error: error.message });
-    }
-}
-
 const getAccountById = async (req, res) => {
     try {
-        const { email_seller } = req.params
+        const { email } = req.params
 
-        if(!email_seller) {
+        if(!email) {
             return res.json({ status: 400, message: 'Invalid input!'});
         }
 
-        const resultAccount = await Seller.findOne(email_seller)
+        const resultAccount = await User.findOne(email)
         if(!resultAccount) {
-            return res.json({ status: 404, message: 'Seller not found!' });
+            return res.json({ status: 404, message: 'User not found!' });
         }
         
-        return res.json({ status: 200, message: 'Successfully get data seller account', data: resultAccount });
+        return res.json({ status: 200, message: 'Successfully get data user account', data: resultAccount });
 
     } catch (error) {
         return res.json({ status: 500, message: 'Server error', error: error.message });
     }
 }
 
-// Delete Account
-
-const removeConsumer = async (req, res) => {
+const removeUser = async (req, res) => {
     try {
-        const { consumer_id } = req.params
+        const { user_id } = req.params
 
-        const equalConsumer = await Consumer.findOne({ consumer_id })
-        if(!equalConsumer) return res.json({ status: 404, message: 'User Not Found!' })
+        const equalUser = await User.findOne({ user_id })
+        if(!equalUser) return res.json({ status: 404, message: 'User Not Found!' })
 
-        const deleteConsumer = await Consumer.deleteOne({ consumer_id })
+        const deleteConsumer = await User.deleteOne({ user_id })
         if(!deleteConsumer) return res.json({ status: 500, message: 'Failed to delete user!' })
 
-        return res.json({ status: 200, message: "Successfully to delete user", data: equalConsumer })
+        return res.json({ status: 200, message: "Successfully to delete user", data: equalUser })
     } catch (error) {
+        return res.json({ status: 500, message: 'Error server', error })
+    }
+}
+
+const getAllUser = async (req, res) => {
+    try {
+
+        const user = await User.find()
+
+        return res.json({ status: 200, message: 'Successfully get users', data: user })
+
+    } catch (error) {
+        return res.json({ status: 500, message: 'Error server', error })
+    }
+}
+
+const updateUserAccount = async (req, res) => {
+    try {
+        const { user_id } = req.params
+        const { fullName, email, number_telephone, gender, NIK, NIM, type_image, prodi } = req.body
         
-    }
-}
-
-const removeSeller = async (req, res) => {
-    try {
-        const { seller_id } = req.params
-
-        const equalSeller = await Seller.findOne({ seller_id })
-        if(!equalSeller) return res.json({ status: 404, message: 'User Not Found!' })
-
-        const deleteSeller = await Seller.deleteOne({ seller_id })
-        if(!deleteSeller) return res.json({ status: 500, message: 'Failed to delete seller!' })
-
-        return res.json({ status: 200, message: "Successfully to delete seller", data: equalSeller })
-    } catch (error) {
-        return res.json({ status: 500, message: 'Error server', error })
-    }
-}
-
-
-// Get all account
-
-const getAllConsumer = async (req, res) => {
-    try {
-        const { consumer_id } = req.params
-        const filter = {}
-
-        if(consumer_id) filter.consumer_id = consumer_id
-
-        const getConsumer = await Consumer.find(filter)
-
-        return res.json({ status: 200, message: 'Successfully get users', data: getConsumer })
-
-    } catch (error) {
-        return res.json({ status: 500, message: 'Error server', error })
-    }
-}
-
-const getAllSeller = async (req, res) => {
-    try {
-        const { seller_id } = req.params
-        const filter = {}
-
-        if(seller_id) filter.seller_id = seller_id
-
-        const getSeller = await Seller.find(filter)
-
-        return res.json({ status: 200, message: 'Successfully get users', data: getSeller })
-
-    } catch (error) {
-        return res.json({ status: 500, message: 'Error server', error })
-    }
-}
-
-const updateSellerAccount = async (req, res) => {
-    try {
-        const { seller_id } = req.params
-        const { seller_name, email_seller, telephone_seller, gender, instagram, twitter, birthday } = req.body
-        
-        const requiredFields = ['email_seller', 'seller_name', 'gender', 'telephone_seller', 'birthday'];
+        const requiredFields = ['email', 'fullName', 'prodi', 'NIM', 'NIK', 'gender', 'type_image'];
         const missingFields = requiredFields.filter(field => !req.body[field]);
         
         if (missingFields.length > 0) {
             return res.json({ status: 401, message: 'Fields are missing'});
         }
         
-        const seller_image = req.file ? req.file.filename : undefined;
-
-        const filter = { seller_id }
+        const filter = { user_id }
         const set = { 
-            seller_name, 
-            email_seller, 
-            telephone_seller, 
+            fullName, 
+            email, 
+            number_telephone, 
             gender, 
-            instagram, 
-            twitter, 
-            birthday,
-            seller_image
+            NIK, 
+            NIM, 
+            prodi,
+            type_image
          } 
 
-         const update = await Seller.updateOne(filter, set)
-         if(update) {
-             return res.json({ status: 200, message: 'Successfully for update data account!', data: set })
-         }else {
-             return res.json({ status: 500, message: 'Update account failed!', error: error.message })
-         }
-
-    } catch (error) {
-        return res.json({ status: 500, message: 'Server error!', error: error.message })
-    }
-}
-
-const updateConsumerAccount = async (req, res) => {
-    try {
-        const { consumer_id } = req.params
-        const { consumer_name, email_consumer, telephone_consumer, gender, post_code, address } = req.body
-        
-        const requiredFields = ['email_consumer', 'consumer_name', 'gender', 'telephone_consumer'];
-        const missingFields = requiredFields.filter(field => !req.body[field]);
-        
-        if (missingFields.length > 0) {
-            return res.json({ status: 401, message: 'Fields are missing'});
-        }
-        
-        const equalConsumer = await Consumer.findOne({email_consumer})
-        if(!equalConsumer) return res.json({ status: 404, message: 'User not found!' })
-
-        const oldImage = equalConsumer.consumer_image;
-        const consumer_image = req.file ? req.file.filename : undefined;
-
-        const filter = { consumer_id }
-        const set = { 
-            consumer_name, 
-            email_consumer, 
-            telephone_consumer, 
-            gender, 
-            post_code, 
-            address, 
-            consumer_image
-         } 
-
-        if(oldImage !== 'default.png' && consumer_image) {
-            try {
-                const imagePath = path.join(__dirname, '..', 'uploads', oldImage);
-                await fs.promises.unlink(imagePath);
-            } catch(error) {
-                return res.json({ status: 500, message: 'Error removing old image!', error: error.message })
-            }
-        }
-
-         const update = await Consumer.updateOne(filter, set)
+         const update = await User.updateOne(filter, set)
          if(update) {
              return res.json({ status: 200, message: 'Successfully for update data account!', data: set })
          }else {
@@ -359,19 +179,19 @@ const updateConsumerAccount = async (req, res) => {
 
 const forgotPassword = async (req, res) => {
     try {
-        const { email_seller } = req.body
+        const { email } = req.body
 
-        const equalEmail = await Seller.findOne({email_seller})
-        if(!equalEmail) return res.json({ status: 404, message: 'Seller not found!' })
+        const equalEmail = await User.findOne({email})
+        if(!equalEmail) return res.json({ status: 404, message: 'User not found!' })
 
-        const resetTokenPassword = crypto.randomBytes(20).toString('hex')
+        const resetTokenPassword = crypto.randomBytes(8).toString('hex')
 
-        const filter = { email_seller }
+        const filter = { email }
         const set = {
             resetTokenPassword
         }
 
-        await Seller.updateOne(filter, set)
+        await User.updateOne(filter, set)
 
         const transporter = nodemailer.createTransport({
             service: 'Gmail',
@@ -399,7 +219,7 @@ const forgotPassword = async (req, res) => {
                     <div class="container">
                         <h2>Reset Your Password</h2>
                         <p>You are receiving this email because you (or someone else) has requested to reset the password for your account. Please click the link below to reset your password:</p>
-                        <a href="http://localhost:5174/auth/reset-password/${resetTokenPassword}">Reset Password</a>
+                        <a href="http://localhost:3000/auth/reset-password/${resetTokenPassword}">Reset Password</a>
                         <p>If you didn't request this, please ignore this email, and your password will remain unchanged.</p>
                     </div>
                 </body>
@@ -407,7 +227,7 @@ const forgotPassword = async (req, res) => {
         `;
 
         const mailOptions = {
-            to: email_seller,
+            to: email,
             from: 'muhammadkhoirulhuda111@gmail.com',
             subject: 'Reset password by ElectShop',
             html: emailContent
@@ -429,12 +249,13 @@ const resetPassword = async (req, res) => {
         const { token } = req.params 
 
         if (!password) {
-            return res.status(400).json({ status: 400, message: 'Password is required' });
+            return res.status(400).json({ status: 400, message: 'Password is required!' });
         }
           
-        const equalEmail = await Seller.findOne({ 
+        const equalEmail = await User.findOne({ 
             resetTokenPassword: token,
         })
+
         if(!equalEmail) return res.json({ status: 404, message: 'Invalid or expired token!' })
         
         const salt = await bcrypt.genSalt(10)
@@ -446,12 +267,12 @@ const resetPassword = async (req, res) => {
             resetTokenPassword: '',
         }
 
-        const updateResult = await Seller.updateOne(filter, set)
+        const updateResult = await User.updateOne(filter, set)
 
         if (updateResult) {
-            return res.status(200).json({ status: 200, message: 'Password successfully reset' });
+            return res.status(200).json({ status: 200, message: 'Password successfully reset!' });
         } else {
-            return res.status(500).json({ status: 500, message: 'Failed to reset password' });
+            return res.status(500).json({ status: 500, message: 'Failed to reset password!' });
         }
 
     } catch (error) {
@@ -460,16 +281,12 @@ const resetPassword = async (req, res) => {
 }
 
 module.exports = {
-    signUpConsumer,
-    signInConsumer,
-    signUpSeller,
-    signInSeller,
-    removeConsumer,
-    removeSeller,
-    getAllConsumer,
-    getAllSeller,
-    updateSellerAccount,
-    updateConsumerAccount,
+    signUp,
+    signIn,
+    getAccountById,
+    getAllUser,
+    removeUser,
+    updateUserAccount,
     forgotPassword,
     resetPassword,
     upload

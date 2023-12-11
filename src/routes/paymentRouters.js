@@ -9,7 +9,7 @@ router.get('/methods', paymentController.getAllPaymentByShop)
 router.put('/update/methods', paymentController.getAllPaymentByShop)
 
 // To-pup
-router.post('/top-up', paymentController.disbursementPayment)
+router.post('/top-up', paymentController.createPayment)
 
 // Withdraw
 router.post('/withdraw', paymentController.disbursementPayment)
