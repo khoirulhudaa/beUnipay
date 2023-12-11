@@ -37,15 +37,11 @@ app.use('/uploads', express.static(path.join(__dirname, 'src/uploads')));
 
 // Routers
 const checkToken = require('./src/middlewares/verifyToken')
-const requestRouter = require('./src/routes/requestRouters')
-const shopRouter = require('./src/routes/shopRouters')
 const productRouter = require('./src/routes/productRouters')
 const accountRouter = require('./src/routes/accountRouters')
 const paymentRouter = require('./src/routes/paymentRouters')
 
 app.use('/account', accountRouter)
-app.use('/request', checkToken, requestRouter)
-app.use('/shop', checkToken, shopRouter)
 app.use('/product', checkToken, productRouter)
 app.use('/payment', paymentRouter)
 
