@@ -79,7 +79,7 @@ const createPayment = async (req, res) => {
       description,
       typePayment
     } = req.body;
-
+    
     const referenceId = crypto.randomBytes(5).toString('hex')
     
     const data = {

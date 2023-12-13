@@ -45,8 +45,11 @@ const signUp = async (req, res) => {
     try {
         const { email, password, gender, number_telephone, NIK, NIM, prodi, fullName } = req.body
        
-        const equalUser = await User.findOne({ email })
-        if(equalUser) return res.json({ status: 400, message: 'Email already exist!' })
+        const equalUserByEmail = await User.findOne({ email })
+        if(equalUserByEmail) return res.json({ status: 400, message: 'Email already exist!' })
+        
+        const equalUserByNIM = await User.findOne({ NIM })
+        if(equalUserByNIM) return res.json({ status: 400, message: `User with NIM ${NIM} already exist!` })
  
         const id = crypto.randomBytes(20).toString('hex')
 
