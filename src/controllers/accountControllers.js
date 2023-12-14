@@ -79,6 +79,9 @@ const signUp = async (req, res) => {
 const signIn = async (req, res) => {
     try {
         const {NIM, password} = req.body
+        console.log('NIM:',NIM)
+        console.log('password:',password)
+
         const user = await User.findOne({ NIM })
         if(!user) return res.json({ status: 404, message: 'User not found!' })
 
