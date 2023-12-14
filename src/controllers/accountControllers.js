@@ -88,8 +88,8 @@ const signIn = async (req, res) => {
             return res.json({ status: 401, message: 'Incorrect password!' });
         }
 
-        const token = jwt.sign({ user_id: User.user_id }, 'ElectShop', { expiresIn: '2h' });
-        return res.json({ status: 200, token, data: consumer });
+        const token = jwt.sign({ user_id: User.user_id }, 'Unipay', { expiresIn: '2h' });
+        return res.json({ status: 200, token, data: user });
         
     } catch (error) {
         return res.json({ status: 500, message: 'Failed to signin!', error: error.message });
