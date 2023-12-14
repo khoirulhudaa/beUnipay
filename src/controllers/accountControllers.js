@@ -78,8 +78,8 @@ const signUp = async (req, res) => {
 
 const signIn = async (req, res) => {
     try {
-        const {email, password} = req.body
-        const user = await User.findOne({ email })
+        const {NIM, password} = req.body
+        const user = await User.findOne({ NIM })
         if(!user) return res.json({ status: 404, message: 'User not found!' })
 
         const isMatch = await bcrypt.compare(password, User.password);
