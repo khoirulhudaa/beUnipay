@@ -5,6 +5,10 @@ const UserSchema = new mongoose.Schema({
         type: String,
         required: true
     },
+    balance: {
+        type: Number,
+        default: 0
+    },
     email: {
         type: String,
         required: true,
@@ -47,13 +51,17 @@ const UserSchema = new mongoose.Schema({
         type: String,
         default: 'default.png'
     },
-    type_image: {
+    typePhoto: {
         type: String,
-        default: 'Man1'
+        default: 'man1'
     },
     resetTokenPassword: {
         type: String,
         default: ''
+    },
+    accountNumber: {
+        type: String,
+        required: true
     }
 })
 

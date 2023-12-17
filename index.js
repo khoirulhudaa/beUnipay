@@ -38,13 +38,11 @@ app.use('/uploads', express.static(path.join(__dirname, 'src/uploads')));
 
 // Routers
 const checkToken = require('./src/middlewares/verifyToken')
-const productRouter = require('./src/routes/productRouters')
 const accountRouter = require('./src/routes/accountRouters')
 const paymentRouter = require('./src/routes/paymentRouters')
 
 app.use('/account', accountRouter)
-app.use('/product', checkToken, productRouter)
-app.use('/payment', paymentRouter)
+app.use('/payment', checkToken, paymentRouter)
 
 app.get('/test', (req, res) => {
     res.send('test success!')   

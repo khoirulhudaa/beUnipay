@@ -43,7 +43,7 @@ const upload = multer({
 
 const signUp = async (req, res) => {
     try {
-        const { email, password, gender, number_telephone, NIK, NIM, prodi, fullName } = req.body
+        const { email, password, gender, number_telephone, NIK, NIM, prodi, fullName, accountNumber } = req.body
        
         const equalUserByEmail = await User.findOne({ email })
         if(equalUserByEmail) return res.json({ status: 400, message: 'Email already exist!' })
@@ -65,7 +65,9 @@ const signUp = async (req, res) => {
             number_telephone,
             NIK,
             NIM, 
-            prodi
+            prodi,
+            accountNumber,
+            typePhoto: gender === 'Male' ? 'man1' : 'woman1'
         })
 
         await newUser.save()
@@ -79,20 +81,17 @@ const signUp = async (req, res) => {
 const signIn = async (req, res) => {
     try {
         const {NIM, password} = req.body
-        console.log('NIM:',NIM)
-        console.log('password:',password)
 
         const user = await User.findOne({ NIM })
         if(!user) return res.json({ status: 404, message: 'User not found!' })
 
-        const isMatch = await bcrypt.compare(password, User.password);
-
+        const isMatch = await bcrypt.compare(password, user.password);
         if (!isMatch) {
             return res.json({ status: 401, message: 'Incorrect password!' });
         }
 
-        const token = jwt.sign({ user_id: User.user_id }, 'Unipay', { expiresIn: '2h' });
-        return res.json({ status: 200, token, data: user });
+        const token = jwt.sign({ user_id: user.user_id }, 'Unipay', { expiresIn: '2h' });
+        return res.json({ status: 200, token, data: user, message: 'Successfully signin!' });
         
     } catch (error) {
         return res.json({ status: 500, message: 'Failed to signin!', error: error.message });
@@ -101,13 +100,13 @@ const signIn = async (req, res) => {
 
 const getAccountById = async (req, res) => {
     try {
-        const { email } = req.params
+        const { user_id } = req.params
 
-        if(!email) {
+        if(!user_id) {
             return res.json({ status: 400, message: 'Invalid input!'});
         }
 
-        const resultAccount = await User.findOne(email)
+        const resultAccount = await User.findOne({user_id})
         if(!resultAccount) {
             return res.json({ status: 404, message: 'User not found!' });
         }
@@ -137,8 +136,14 @@ const removeUser = async (req, res) => {
 
 const getAllUser = async (req, res) => {
     try {
+        const { prodi, angkatan, kelas } = req.params
 
-        const user = await User.find()
+        const filter = {}
+        if(prodi) filter.prodi = prodi 
+        if(prodi) filter.angkatan = angkatan 
+        if(prodi) filter.kelas = keas 
+
+        const user = await User.find(filter)
 
         return res.json({ status: 200, message: 'Successfully get users', data: user })
 
@@ -150,9 +155,9 @@ const getAllUser = async (req, res) => {
 const updateUserAccount = async (req, res) => {
     try {
         const { user_id } = req.params
-        const { fullName, email, number_telephone, gender, NIK, NIM, type_image, prodi } = req.body
+        const { fullName, email, number_telephone, gender, type_photo } = req.body
         
-        const requiredFields = ['email', 'fullName', 'prodi', 'NIM', 'NIK', 'gender', 'type_image'];
+        const requiredFields = ['email', 'fullName', 'gender', 'type_photo'];
         const missingFields = requiredFields.filter(field => !req.body[field]);
         
         if (missingFields.length > 0) {
@@ -165,10 +170,7 @@ const updateUserAccount = async (req, res) => {
             email, 
             number_telephone, 
             gender, 
-            NIK, 
-            NIM, 
-            prodi,
-            type_image
+            typePhoto: type_photo
          } 
 
          const update = await User.updateOne(filter, set)
@@ -202,8 +204,8 @@ const forgotPassword = async (req, res) => {
         const transporter = nodemailer.createTransport({
             service: 'Gmail',
             auth: {
-                user: '',
-                pass: ''
+                user: 'muhammadkhoirulhuda111@gmail.com',
+                pass: 'pwdi hnbx usqq xwnh'
             }
         })
 
@@ -225,7 +227,7 @@ const forgotPassword = async (req, res) => {
                     <div class="container">
                         <h2>Reset Your Password</h2>
                         <p>You are receiving this email because you (or someone else) has requested to reset the password for your account. Please click the link below to reset your password:</p>
-                        <a href="http://localhost:3000/auth/reset-password/${resetTokenPassword}">Reset Password</a>
+                        <a href="http://localhost:3000/auth/resetPassword/${resetTokenPassword}">Reset Password</a>
                         <p>If you didn't request this, please ignore this email, and your password will remain unchanged.</p>
                     </div>
                 </body>
@@ -235,7 +237,7 @@ const forgotPassword = async (req, res) => {
         const mailOptions = {
             to: email,
             from: 'muhammadkhoirulhuda111@gmail.com',
-            subject: 'Reset password by ElectShop',
+            subject: 'Reset password by Unipay',
             html: emailContent
         }
 
@@ -253,7 +255,7 @@ const resetPassword = async (req, res) => {
     try {   
         const { password } = req.body
         const { token } = req.params 
-
+        console.log(password)
         if (!password) {
             return res.status(400).json({ status: 400, message: 'Password is required!' });
         }
