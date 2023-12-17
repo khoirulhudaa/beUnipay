@@ -141,9 +141,10 @@ const updateDatabase = async (external_id, data) => {
 
       let DESCRIPTION 
       let NIM_TO
+      const data = ''
 
       if(data.description.includes('_')) {
-        const parts = DESCRIPTION.split("_");
+        const parts = data.description.split("_");
         DESCRIPTION = parts[0]; 
         NIM_TO = parts[1]
       }else {
@@ -179,7 +180,7 @@ const updateDatabase = async (external_id, data) => {
         const dataBalanceTO = await User.findOne(filterBalanceTO)
        
         if(!dataBalanceFROM || !dataBalanceTO) {
-          return { status: 404, message: 'User not found!' };
+          return { status: 404, message: 'User not found  !' };
         }
   
         const addBalanceWithTopUp = {
