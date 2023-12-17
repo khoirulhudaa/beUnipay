@@ -106,6 +106,7 @@ const createPayment = async (req, res) => {
           status: 'PENDING',
           description,
           fullName,
+          amount,
           number_telephone,
           NIM,
           recipient: to,

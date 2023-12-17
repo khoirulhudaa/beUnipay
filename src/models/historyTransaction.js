@@ -9,6 +9,10 @@ const HistorySchema = new mongoose.Schema({
         type: String,
         required: true
     },
+    amount: {
+        type: Number,
+        required: true
+    },
     NIM: {
         type: String,
         required: true
