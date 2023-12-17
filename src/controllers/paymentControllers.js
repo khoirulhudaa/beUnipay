@@ -142,7 +142,7 @@ const updateDatabase = async (external_id, data) => {
       let DESCRIPTION 
       let NIM_TO
 
-      if(data.description.include('_')) {
+      if(data.description.includes('_')) {
         const parts = DESCRIPTION.split("_");
         DESCRIPTION = parts[0]; 
         NIM_TO = parts[1]
