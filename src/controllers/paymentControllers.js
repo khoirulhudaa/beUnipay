@@ -82,7 +82,7 @@ const createPayment = async (req, res) => {
       classRoom
     } = req.body;
 
-    const requiredFields = ['amount', 'fullName', 'number_telephone', 'email', 'description', 'typePayment', 'year', 'NIM', 'to', 'classRoom'];
+    const requiredFields = ['amount', 'classRoom'];
     const missingFields = requiredFields.filter(field => !req.body[field]);
     
     if (missingFields.length > 0) {
