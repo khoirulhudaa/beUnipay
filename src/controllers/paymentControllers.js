@@ -11,7 +11,6 @@ const xenditInvoice = new InvoiceClient({secretKey: 'xnd_development_mkZ1EDWSeFN
 const handlePaymentCallback = async (req, res) => {
     try {
         const callbackData = req.body;
-        console.log('callback', callbackData)
         await updateDatabase(callbackData.external_id, callbackData)
 
         return res.json({ status: 200, data: callbackData });
@@ -80,7 +79,15 @@ const createPayment = async (req, res) => {
       year,
       NIM,
       to,
+      classRoom
     } = req.body;
+
+    const requiredFields = ['amount', 'fullName', 'number_telephone', 'email', 'description', 'typePayment', 'year', 'NIM', 'to', 'classRoom'];
+    const missingFields = requiredFields.filter(field => !req.body[field]);
+    
+    if (missingFields.length > 0) {
+        return res.json({ status: 401, message: 'Fields are missing'});
+    }
     
     const referenceId = crypto.randomBytes(5).toString('hex')
     
@@ -93,8 +100,6 @@ const createPayment = async (req, res) => {
       "reminderTime" : 1,
       "successRedirectUrl": "https://unipay-ikmi.vercel.app/successPayment",
     }
-
-    // console.log('data transaksi:', data)
 
     const response = await xenditInvoice.createInvoice({
         data
@@ -112,7 +117,8 @@ const createPayment = async (req, res) => {
           year,
           NIM,
           recipient: to,
-          type_payment: typePayment
+          type_payment: typePayment,
+          classRoom
       }
 
       const historyTransactionSave = new historyTransaction(dataHistory)

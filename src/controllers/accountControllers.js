@@ -256,7 +256,6 @@ const resetPassword = async (req, res) => {
     try {   
         const { password } = req.body
         const { token } = req.params 
-        console.log(password)
         if (!password) {
             return res.status(400).json({ status: 400, message: 'Password is required!' });
         }
