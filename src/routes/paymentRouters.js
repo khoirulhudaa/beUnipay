@@ -20,4 +20,7 @@ router.post('/callback', paymentController.handlePaymentCallback)
 // Transfer
 router.post('/create', paymentController.createPayment)
 
+router.get('/history', paymentController.getAllHistoryPayments)
+
+
 module.exports = router

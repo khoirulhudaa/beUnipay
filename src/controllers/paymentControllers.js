@@ -273,10 +273,32 @@ const updatePaymentMethod = async (req, res) => {
   }
 }
 
+const getAllHistoryPayments = async (req, res) => {
+  try {
+    const { NIM, typePayment, classRoom, year, prodi } = req.params  
+    
+    const filter = {}
+    if(NIM) filter.NIM = NIM
+    if(typePayment) filter.typePayment = typePayment
+    if(classRoom) filter.classRoom = classRoom
+    if(year) filter.year = year
+    if(prodi) filter.prodi = prodi
+
+    const historyData = await historyTransaction.find(filter)
+    if(historyData === 0) return res.json({ status: 404, message: 'History not found!' }) 
+
+    return res.json({ status: 200, message: 'Successfully get history payments!', data: historyData }) 
+
+  } catch (error) {
+    return res.json({ status: 500, message: 'Error server!', error: error.message });
+  }
+}
+
 module.exports = {
     handlePaymentCallback,
     createPayment,
     disbursementPayment,
     getAllPaymentByShop,
-    updatePaymentMethod
+    updatePaymentMethod,
+    getAllHistoryPayments
 }
