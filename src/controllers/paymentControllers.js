@@ -77,6 +77,7 @@ const createPayment = async (req, res) => {
       email,
       description,
       typePayment,
+      year,
       NIM,
       to,
     } = req.body;
@@ -103,11 +104,12 @@ const createPayment = async (req, res) => {
       const dataHistory = {
           history_id: referenceId,
           email,
-          status: 'PENDING',
+          status: 'PEN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DING',
           description,
           fullName,
           amount,
           number_telephone,
+          year,
           NIM,
           recipient: to,
           type_payment: typePayment

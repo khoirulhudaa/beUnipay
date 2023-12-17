@@ -43,7 +43,7 @@ const upload = multer({
 
 const signUp = async (req, res) => {
     try {
-        const { email, password, gender, number_telephone, NIK, NIM, prodi, fullName, accountNumber } = req.body
+        const { email, password, gender, number_telephone, year, NIK, NIM, prodi, fullName, accountNumber } = req.body
        
         const equalUserByEmail = await User.findOne({ email })
         if(equalUserByEmail) return res.json({ status: 400, message: 'Email already exist!' })
@@ -66,6 +66,7 @@ const signUp = async (req, res) => {
             NIK,
             NIM, 
             prodi,
+            year,
             accountNumber,
             typePhoto: gender === 'Male' ? 'man1' : 'woman1'
         })

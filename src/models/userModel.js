@@ -47,6 +47,10 @@ const UserSchema = new mongoose.Schema({
         type: String,
         default: '-'
     },
+    year: {
+        type: String,
+        required: true
+    },
     prodi: {
         type: String,
         default: 'default.png'
