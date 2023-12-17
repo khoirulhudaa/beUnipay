@@ -202,19 +202,22 @@ const updateDatabase = async (external_id, data) => {
         }
       } else {
         
-        const filterBalance = { NIM: external_id }
+        const filterBalance = { NIM: external_id };
         const dataBalance = await User.findOne(filterBalance)
-
-        const minusBalanceWithTransaction = {
+        if(!dataBalance) {
+          return { status: 404, message: 'User not found!' };
+        }
+  
+        const addBalanceWithAdminTF = {
           balance: dataBalance.balance - data.amount,
         };
-        
+  
         if(data.status === 'PAID') {
-          await User.updateOne(filterBalance, minusBalanceWithTransaction)
+          await User.updateOne(filterBalance, addBalanceWithAdminTF);
           await historyTransaction.updateOne(filterBalance, { status: 'PAID' })
           return { status: 200, message: 'Success update status payment!' }
         }else {
-          return  res.json({ status: 500, message: `Status payment is failed for ${data.status}!` })
+          return { status: 200, message: `Status payment is ${data.status}!` }
         }
       }
 
