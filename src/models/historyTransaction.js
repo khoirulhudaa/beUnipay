@@ -9,13 +9,17 @@ const HistorySchema = new mongoose.Schema({
         type: String,
         required: true
     },
-    user_id: {
+    NIM: {
         type: String,
         required: true
     },
     email: {
         type: String,
         required: true
+    },
+    recipient: {
+        type: String,
+        required: true,
     },
     date: {
         type: Date,

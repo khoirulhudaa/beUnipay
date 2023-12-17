@@ -5,13 +5,13 @@ const dotenv = require('dotenv');
 dotenv.config();
 
 const { Payout: PayoutClient, Invoice: InvoiceClient  } = require('xendit-node');
-const xenditPayoutClient = new PayoutClient({ secretKey: 'xnd_development_LHt55GITF5Fri0xE3vF5Akd28vtDkpLNs2Y1Xcz4gOLOCPJe4hmTmujzagqY4O7' });
-const xenditInvoice = new InvoiceClient({secretKey: 'xnd_development_LHt55GITF5Fri0xE3vF5Akd28vtDkpLNs2Y1Xcz4gOLOCPJe4hmTmujzagqY4O7'})
+const xenditPayoutClient = new PayoutClient({ secretKey: 'xnd_development_RbmdCeO9MKSxYegq0KPyQAzJjsN1iptx3CbW8e3HhTIRUHHv3GjwuNSUZNeVC0' });
+const xenditInvoice = new InvoiceClient({secretKey: 'xnd_development_RbmdCeO9MKSxYegq0KPyQAzJjsN1iptx3CbW8e3HhTIRUHHv3GjwuNSUZNeVC0'})
 
 const handlePaymentCallback = async (req, res) => {
     try {
         const callbackData = req.body;
-
+        console.log('callback', callbackData)
         await updateDatabase(callbackData.external_id, callbackData)
 
         return res.json({ status: 200, data: callbackData });
@@ -75,9 +75,10 @@ const createPayment = async (req, res) => {
       fullName,
       number_telephone,
       email,
-      user_id,
       description,
-      typePayment
+      typePayment,
+      NIM,
+      to,
     } = req.body;
     
     const referenceId = crypto.randomBytes(5).toString('hex')
@@ -85,12 +86,14 @@ const createPayment = async (req, res) => {
     const data = {
       "amount" : amount,
       "invoiceDuration" : 172800,
-      "externalId" : user_id,
+      "externalId" : NIM,
       "description" : description,
       "currency" : "IDR",
       "reminderTime" : 1,
       "successRedirectUrl": "https://unipay-ikmi.vercel.app/successPayment",
     }
+
+    // console.log('data transaksi:', data)
 
     const response = await xenditInvoice.createInvoice({
         data
@@ -104,7 +107,8 @@ const createPayment = async (req, res) => {
           description,
           fullName,
           number_telephone,
-          user_id,
+          NIM,
+          recipient: to,
           type_payment: typePayment
       }
 
@@ -126,7 +130,7 @@ const createPayment = async (req, res) => {
 const updateDatabase = async (external_id, data) => {
   try {
     
-      const filterBalance = { user_id: external_id };
+      const filterBalance = { NIM: external_id };
 
       const dataBalance = await User.findOne(filterBalance)
       if(!dataBalance) {
@@ -140,6 +144,9 @@ const updateDatabase = async (external_id, data) => {
       const minusBalanceWithTransaction = {
         balance: dataBalance.balance - data.amount,
       };
+
+      console.log('data update: ', data)
+      console.log('external_id ', external_id)
       
       if(data.status === 'PAID') {
        
