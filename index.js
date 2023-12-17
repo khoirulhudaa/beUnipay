@@ -42,7 +42,7 @@ const accountRouter = require('./src/routes/accountRouters')
 const paymentRouter = require('./src/routes/paymentRouters')
 
 app.use('/account', accountRouter)
-app.use('/payment', checkToken, paymentRouter)
+app.use('/payment', paymentRouter)
 
 app.get('/test', (req, res) => {
     res.send('test success!')   
