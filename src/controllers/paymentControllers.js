@@ -5,8 +5,8 @@ const dotenv = require('dotenv');
 dotenv.config();
 
 const { Payout: PayoutClient, Invoice: InvoiceClient  } = require('xendit-node');
-const xenditPayoutClient = new PayoutClient({ secretKey: 'xnd_development_RbmdCeO9MKSxYegq0KPyQAzJjsN1iptx3CbW8e3HhTIRUHHv3GjwuNSUZNeVC0' });
-const xenditInvoice = new InvoiceClient({secretKey: 'xnd_development_RbmdCeO9MKSxYegq0KPyQAzJjsN1iptx3CbW8e3HhTIRUHHv3GjwuNSUZNeVC0'})
+const xenditPayoutClient = new PayoutClient({ secretKey: 'xnd_development_mkZ1EDWSeFNvcrZ2hkMGTZZuo3TSl9ar88LF8wHCcyffSZwGaqrSwwA70a8UyhS' });
+const xenditInvoice = new InvoiceClient({secretKey: 'xnd_development_mkZ1EDWSeFNvcrZ2hkMGTZZuo3TSl9ar88LF8wHCcyffSZwGaqrSwwA70a8UyhS'})
 
 const handlePaymentCallback = async (req, res) => {
     try {
@@ -160,7 +160,7 @@ const updateDatabase = async (external_id, data) => {
           await historyTransaction.updateOne(filterBalance, { status: 'PAID' })
           return { status: 200, message: 'Success update status payment!' }
         }
-        
+
       }else {
         console.log('NOT PAID!')
         return { status: 200, message: `Status payment is ${data.status}!` }
