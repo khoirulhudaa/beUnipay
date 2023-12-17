@@ -153,12 +153,14 @@ const updateDatabase = async (external_id, data) => {
        
         if(data.description === 'TOP-UP') {
           await User.updateOne(filterBalance, addBalanceWithTopUp);
+          await historyTransaction.updateOne(filterBalance, { status: 'PAID' })
+          return { status: 200, message: 'Success update status payment!' }
         }else {
           await User.updateOne(filterBalance, minusBalanceWithTransaction);
+          await historyTransaction.updateOne(filterBalance, { status: 'PAID' })
+          return { status: 200, message: 'Success update status payment!' }
         }
-
-        await historyTransaction.updateOne(filter, { status: 'PAID' })
-        return { status: 200, message: 'Success update status payment!' }
+        
       }else {
         console.log('NOT PAID!')
         return { status: 200, message: `Status payment is ${data.status}!` }
