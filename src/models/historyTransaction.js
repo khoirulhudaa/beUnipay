@@ -47,4 +47,4 @@ const HistorySchema = new mongoose.Schema({
     }
 })
 
-module.exports = mongoose.model('HistoryConsumer', HistorySchema)
+module.exports = mongoose.model('historyTransaction', HistorySchema)
