@@ -137,12 +137,12 @@ const removeUser = async (req, res) => {
 
 const getAllUser = async (req, res) => {
     try {
-        const { prodi, angkatan, kelas } = req.params
+        const { prodi, year, classRoom } = req.params
 
         const filter = {}
         if(prodi) filter.prodi = prodi 
-        if(prodi) filter.angkatan = angkatan 
-        if(prodi) filter.kelas = keas 
+        if(year) filter.year = year 
+        if(classRoom) filter.classRoom = classRoom 
 
         const user = await User.find(filter)
 

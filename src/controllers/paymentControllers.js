@@ -275,7 +275,7 @@ const updatePaymentMethod = async (req, res) => {
 
 const getAllHistoryPayments = async (req, res) => {
   try {
-    const { NIM, typePayment, classRoom, year, prodi } = req.params  
+    const { NIM, typePayment, classRoom, year, prodi } = req.body  
     
     const filter = {}
     if(NIM) filter.NIM = NIM

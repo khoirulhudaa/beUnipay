@@ -25,6 +25,10 @@ const HistorySchema = new mongoose.Schema({
         type: String,
         required: true
     },
+    type_payment: {
+        type: String,
+        required: true
+    },  
     recipient: {
         type: String,
         required: true,
