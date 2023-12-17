@@ -79,7 +79,8 @@ const createPayment = async (req, res) => {
       year,
       NIM,
       to,
-      classRoom
+      classRoom,
+      note
     } = req.body;
 
     const requiredFields = ['amount', 'classRoom'];
@@ -112,6 +113,7 @@ const createPayment = async (req, res) => {
           status: 'PEN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DING',
           description,
           fullName,
+          note,
           amount,
           number_telephone,
           year,

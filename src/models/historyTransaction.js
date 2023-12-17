@@ -45,6 +45,10 @@ const HistorySchema = new mongoose.Schema({
         type: String,
         required: true
     },
+    note: {
+        type: String,
+        default: '-'
+    },
     number_telephone: {
         type: String,
         required: true
