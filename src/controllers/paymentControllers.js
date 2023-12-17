@@ -110,7 +110,7 @@ const createPayment = async (req, res) => {
       const dataHistory = {
           history_id: referenceId,
           email,
-          status: 'PEN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DING',
+          status: 'PENDING',
           description,
           fullName,
           note,
