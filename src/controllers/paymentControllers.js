@@ -130,40 +130,83 @@ const createPayment = async (req, res) => {
   
 const updateDatabase = async (external_id, data) => {
   try {
-    
-      const filterBalance = { NIM: external_id };
 
-      const dataBalance = await User.findOne(filterBalance)
-      if(!dataBalance) {
-        return { status: 404, message: 'User not found!' };
+      let DESCRIPTION 
+      let NIM_TO
+
+      if(data.description.include('_')) {
+        const parts = DESCRIPTION.split("_");
+        DESCRIPTION = parts[0]; 
+        NIM_TO = parts[1]
+      }else {
+        DESCRIPTION = data.description
+        NIM_TO = ''
       }
 
-      const addBalanceWithTopUp = {
-        balance: dataBalance.balance + data.amount,
-      };
+      if(DESCRIPTION === 'TOP-UP') {
+          
+        const filterBalance = { NIM: external_id };
+          const dataBalance = await User.findOne(filterBalance)
+          if(!dataBalance) {
+            return { status: 404, message: 'User not found!' };
+          }
+    
+          const addBalanceWithTopUp = {
+            balance: dataBalance.balance + data.amount,
+          };
+    
+          if(data.status === 'PAID') {
+            await User.updateOne(filterBalance, addBalanceWithTopUp);
+            await historyTransaction.updateOne(filterBalance, { status: 'PAID' })
+            return { status: 200, message: 'Success update status payment!' }
+          }else {
+            return { status: 200, message: `Status payment is ${data.status}!` }
+          }
+      } else if(DESCRIPTION === 'TRANSFER') {
 
-      const minusBalanceWithTransaction = {
-        balance: dataBalance.balance - data.amount,
-      };
+        const filterBalanceFROM = { NIM: external_id }
+        const filterBalanceTO = { NIM: NIM_TO }
 
-      console.log('data update: ', data)
-      console.log('external_id ', external_id)
-      
-      if(data.status === 'PAID') {
+        const dataBalanceFROM = await User.findOne(filterBalanceFROM)
+        const dataBalanceTO = await User.findOne(filterBalanceTO)
        
-        if(data.description === 'TOP-UP') {
-          await User.updateOne(filterBalance, addBalanceWithTopUp);
+        if(!dataBalanceFROM || !dataBalanceTO) {
+          return { status: 404, message: 'User not found!' };
+        }
+  
+        const addBalanceWithTopUp = {
+          balance: dataBalanceTO.balance + data.amount,
+        };
+  
+        const minusBalanceWithTransaction = {
+          balance: dataBalanceFROM.balance - data.amount,
+        };
+  
+        if(data.status === 'PAID') {
+          await User.updateOne(filterBalanceFROM, minusBalanceWithTransaction);
+          await User.updateOne(filterBalanceTO, addBalanceWithTopUp);
+         
+          await historyTransaction.updateOne(filterBalanceFROM, { status: 'PAID' })
+          return { status: 200, message: 'Success update status payment!' }
+        }else {
+          return  res.json({ status: 500, message: `Status payment is failed for ${data.status}!` })
+        }
+      } else {
+        
+        const filterBalance = { NIM: external_id }
+        const dataBalance = await User.findOne(filterBalance)
+
+        const minusBalanceWithTransaction = {
+          balance: dataBalance.balance - data.amount,
+        };
+        
+        if(data.status === 'PAID') {
+          await User.updateOne(filterBalance, minusBalanceWithTransaction)
           await historyTransaction.updateOne(filterBalance, { status: 'PAID' })
           return { status: 200, message: 'Success update status payment!' }
         }else {
-          await User.updateOne(filterBalance, minusBalanceWithTransaction);
-          await historyTransaction.updateOne(filterBalance, { status: 'PAID' })
-          return { status: 200, message: 'Success update status payment!' }
+          return  res.json({ status: 500, message: `Status payment is failed for ${data.status}!` })
         }
-
-      }else {
-        console.log('NOT PAID!')
-        return { status: 200, message: `Status payment is ${data.status}!` }
       }
 
   } catch (error) {
