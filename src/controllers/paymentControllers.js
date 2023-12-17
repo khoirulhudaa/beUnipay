@@ -168,9 +168,9 @@ const updateDatabase = async (external_id, data) => {
           if(data.status === 'PAID') {
             await User.updateOne(filterBalance, addBalanceWithTopUp);
             await historyTransaction.updateOne(filterBalance, { status: 'PAID' })
-            return { status: 200, message: 'Success update status payment!' }
+            return res.json({ status: 200, message: 'Success update status payment!', data: response})
           }else {
-            return { status: 200, message: `Status payment is ${data.status}!` }
+            return res.json({ status: 200, message: `Status payment is ${data.status}!` })
           }
       } else if(DESCRIPTION === 'TRANSFER') {
 
@@ -197,7 +197,7 @@ const updateDatabase = async (external_id, data) => {
           await User.updateOne(filterBalanceTO, addBalanceWithTopUp);
          
           await historyTransaction.updateOne(filterBalanceFROM, { status: 'PAID' })
-          return { status: 200, message: 'Success update status payment!' }
+          return res.json({ status: 200, message: 'Success update status payment!', data: response})
         }else {
           return  res.json({ status: 500, message: `Status payment is failed for ${data.status}!` })
         }
@@ -216,9 +216,9 @@ const updateDatabase = async (external_id, data) => {
         if(data.status === 'PAID') {
           await User.updateOne(filterBalance, addBalanceWithAdminTF);
           await historyTransaction.updateOne(filterBalance, { status: 'PAID' })
-          return { status: 200, message: 'Success update status payment!' }
+          return res.json({ status: 200, message: 'Success update status payment!', data: response})
         }else {
-          return { status: 200, message: `Status payment is ${data.status}!` }
+          return res.json({ status: 200, message: `Status payment is ${data.status}!` })
         }
       }
 
