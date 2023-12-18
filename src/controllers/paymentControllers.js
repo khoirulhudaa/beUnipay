@@ -222,7 +222,7 @@ const createTransfer = async (req, res) => {
     }
 
     const addBalanceWithTopUp = {
-      balance: dataBalance.balance + amount
+      balance: dataBalance.balance - amount
     };
 
     if(typePayment === 'Canteen') {
@@ -234,7 +234,7 @@ const createTransfer = async (req, res) => {
     
     if(response) {
       await User.updateOne(filterBalance, addBalanceWithTopUp);
-      return res.json({ status: 200, message: 'Your payment is still pending!', data: response})
+      return res.json({ status: 200, message: 'Your payment success!', data: response})
     } else {
       return res.json({ status: 500, message: 'Failed create payment!!', data: response})
     }
