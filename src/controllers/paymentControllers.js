@@ -237,7 +237,7 @@ const createTransfer = async (req, res) => {
       if(NIM !== to) {
         await User.updateOne(filterBalanceTo, addBalanceWithTopUp);
       }else {
-        return res.json({ status: 500, message: 'Transfer gagal!', data: response})
+        return res.json({ status: 500, message: 'Transaksi tidak sah!'})
       }
     }
 
