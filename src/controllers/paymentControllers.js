@@ -201,7 +201,7 @@ const updateDatabase = async (external_id, data) => {
         }else {
           return  res.json({ status: 500, message: `Status payment is failed for ${data.status}!` })
         }
-      } else {
+      } else if(DESCRIPTION === 'Administrasi') {
         
         const filterBalance = { NIM: external_id };
         const dataBalance = await User.findOne(filterBalance)
@@ -221,6 +221,8 @@ const updateDatabase = async (external_id, data) => {
         }else {
           return res.json({ status: 200, message: `Status payment is ${data.status}!` })
         }
+      } else {
+          return res.json({ status: 500, message: `Status payment is not available!` })
       }
 
   } catch (error) {
