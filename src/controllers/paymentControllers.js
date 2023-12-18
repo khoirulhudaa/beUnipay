@@ -30,7 +30,6 @@ const disbursementPayment = async (req, res) => {
         email,
         description,
         typePayment,
-        year,
         NIM,
         classRoom,
         note,
@@ -75,7 +74,6 @@ const disbursementPayment = async (req, res) => {
               note,
               amount,
               number_telephone,
-              year,
               NIM,
               type_payment: typePayment,
               classRoom
