@@ -1,4 +1,5 @@
 const historyTransaction = require('../models/historyTransaction');
+const canteenModel = require('../models/canteenModel');
 const User = require('../models/userModel')
 const crypto = require('crypto')
 const dotenv = require('dotenv');
@@ -19,6 +20,8 @@ const handlePaymentCallback = async (req, res) => {
         return res.json({ status: 500, message: 'Payment failed!', error: error.message })    
     }
 }
+
+// Withdraw
   
 const disbursementPayment = async (req, res) => {
     try {
@@ -93,6 +96,8 @@ const disbursementPayment = async (req, res) => {
     }
 };
 
+// Top-up
+
 const createPayment = async (req, res) => {
   try {
 
@@ -164,151 +169,119 @@ const createPayment = async (req, res) => {
     return res.json({ status: 500, message: 'Server error!', error: error.message})
   }
 }
+
+// Transfer
+
+const createTransfer = async (req, res) => {
+  try {
+
+    const {
+      amount,
+      fullName,
+      number_telephone,
+      email,
+      description,
+      typePayment,
+      year,
+      NIM,
+      to,
+      classRoom,
+      note
+    } = req.body;
+
+    const requiredFields = ['amount', 'classRoom', 'NIM', 'typePayment'];
+    const missingFields = requiredFields.filter(field => !req.body[field]);
+    
+    if (missingFields.length > 0) {
+        return res.json({ status: 401, message: 'Fields are missing'});
+    }
+    
+    const referenceId = crypto.randomBytes(5).toString('hex')
+    
+    const dataHistory = {
+        history_id: NIM+"OF_ID"+referenceId,
+        email,
+        status: 'Transaction (Unipay)',
+        description,
+        fullName,
+        note,
+        amount,
+        number_telephone,
+        year,
+        NIM,
+        recipient: to,
+        type_payment: typePayment,
+        classRoom
+    }
+
+    const filterBalance = { NIM };
+
+    const dataBalance = await User.findOne(filterBalance)
+    if(!dataBalance) {
+      return { status: 404, message: 'User not found!' };
+    }
+
+    const addBalanceWithTopUp = {
+      balance: dataBalance.balance + amount
+    };
+
+    if(description === 'Kantin') {
+      canteenModel.updateOne({}, { $inc: { revenueCanteen: amount } })
+    }
+
+    await User.updateOne(filterBalance, addBalanceWithTopUp);
+    const historyTransactionSave = new historyTransaction(dataHistory)
+    const response = await historyTransactionSave.save()
+
+    if(response) {
+      return res.json({ status: 200, message: 'Your payment is still pending!', data: response})
+    } else {
+      return res.json({ status: 500, message: 'Failed create payment!!', data: response})
+    }
+    
+  } catch (error) {
+    return res.json({ status: 500, message: 'Server error!', error: error.message})
+  }
+}
   
 const updateDatabase = async (external_id, data) => {
   try {
 
-      let DESCRIPTION 
-      let NIM_TO
-      let NIM
+    const filterBalance = { NIM: external_id };
 
-      const externalID_Split = external_id.split('OF_ID')
-      NIM = externalID_Split[0]
+    const dataBalance = await User.findOne(filterBalance)
+    if(!dataBalance) {
+      return { status: 404, message: 'User not found!' };
+    }
 
-      if(data.description.includes('_')) {
-        const parts = data.description.split('_');
-        DESCRIPTION = parts[0]; 
-        NIM_TO = parts[1]
-      }else {
-        DESCRIPTION = data.description
-        NIM_TO = ''
-      }
+    const addBalanceWithTopUp = {
+      balance: dataBalance.balance + data.amount,
+    };
 
-      if(DESCRIPTION === 'TOP-UP') {
+    if(data.status === 'PAID') {
+      await User.updateOne(filterBalance, addBalanceWithTopUp);
+      await historyTransaction.updateOne({history_id: external_id}, { status: 'PAID' })
+
+      return res.json({ status: 200, message: 'Success update status payment!', data: response})
+    }else {
+      return res.json({ status: 200, message: `Status payment is ${data.status}!` })
+    }
           
-        const filterBalance = { NIM };
-          const dataBalance = await User.findOne(filterBalance)
-          if(!dataBalance) {
-            return { status: 404, message: 'User not found!' };
-          }
-    
-          const addBalanceWithTopUp = {
-            balance: dataBalance.balance + data.amount,
-          };
-    
-          if(data.status === 'PAID') {
-            await User.updateOne(filterBalance, addBalanceWithTopUp);
-            await historyTransaction.updateOne({history_id: external_id}, { status: 'PAID' })
-            return res.json({ status: 200, message: 'Success update status payment!', data: response})
-          }else {
-            return res.json({ status: 200, message: `Status payment is ${data.status}!` })
-          }
-      } else if(DESCRIPTION === 'TRANSFER') {
-
-        const filterBalanceFROM = { NIM }
-        const filterBalanceTO = { NIM: NIM_TO }
-
-        const dataBalanceFROM = await User.findOne(filterBalanceFROM)
-        const dataBalanceTO = await User.findOne(filterBalanceTO)
-       
-        if(!dataBalanceFROM || !dataBalanceTO) {
-          return { status: 404, message: 'User not found  !' };
-        }
-  
-        const addBalanceWithTopUp = {
-          balance: dataBalanceTO.balance + data.amount,
-        };
-  
-        const minusBalanceWithTransaction = {
-          balance: dataBalanceFROM.balance - data.amount,
-        };
-  
-        if(data.status === 'PAID') {
-          await User.updateOne(filterBalanceFROM, minusBalanceWithTransaction);
-          await User.updateOne(filterBalanceTO, addBalanceWithTopUp);
-         
-          await historyTransaction.updateOne(filterBalanceFROM, { status: 'PAID' })
-          return res.json({ status: 200, message: 'Success update status payment!', data: response})
-        }else {
-          return  res.json({ status: 500, message: `Status payment is failed for ${data.status}!` })
-        }
-      } else if(DESCRIPTION === 'Administrasi') {
-        
-        const filterBalance = { NIM };
-        const dataBalance = await User.findOne(filterBalance)
-        if(!dataBalance) {
-          return { status: 404, message: 'User not found!' };
-        }
-  
-        const addBalanceWithAdminTF = {
-          balance: dataBalance.balance - data.amount,
-        };
-  
-        if(data.status === 'PAID') {
-          await User.updateOne(filterBalance, addBalanceWithAdminTF);
-          await historyTransaction.updateOne({history_id: external_id}, { status: 'PAID' })
-          
-          return res.json({ status: 200, message: 'Success update status payment!', data: response})
-        }else {
-          return res.json({ status: 200, message: `Status payment is ${data.status}!` })
-        }
-      } else {
-          return res.json({ status: 500, message: `Status payment is not available!` })
-      }
-
   } catch (error) {
       return { status: 500, message: 'Error server!', error: error.message }
     }
 };
   
-const getAllPaymentByShop = async (req, res) => {
+const getAllPaymentMethods = async (req, res) => {
   try {
-      const { user_id } = req.params
-      
-      const getPayment = await paymentMethodModel.findOne({ user_id })
+      const getPayment = await paymentMethodModel.find()
       
       if(getPayment === 0) return res.json({ status: 404, message: 'Data payment not found!' })
 
-      return res.json({ status: 200, message: 'All data payment method', data: getPayment })
+      return res.json({ status: 200, message: 'All data payment methods', data: getPayment })
 
   } catch (error) {
       return res.json({ status: 500, message: 'Error server!', error: error.message });
-  }
-}
-
-const updatePaymentMethod = async (req, res) => {
-  try {
-    const { user_id } = req.params
-    const updates = req.body;
-
-    if (!updates || !Array.isArray(updates)) {
-      return res.status(400).json({ status: 400, message: 'Invalid parameter! Expecting an array in the request body.', data: updates });
-    }
-
-    const updatePromises = updates.map(async (update) => {
-        const { bank_code, account_number, isEnabled } = update;
-        const result = await paymentMethodModel.updateOne(
-            { user_id: user_id, 'payments.bank_code': bank_code },
-            { $set: { 
-              'payments.$.account_number': account_number ,
-              'payments.$.isEnabled': isEnabled ,
-            } },
-            { new: true }
-        );
-    
-        return result;
-    });
-  
-    const results = await Promise.all(updatePromises);    
-      
-    if (! results) {
-        return res.json({ status: 404, message: 'No payment methods were updated.', data: updates });
-    }
-
-    return res.json({ status: 200, message: 'Successfully updated payment methods!', data: updates });
-
-  } catch (error) {
-    return res.json({ status: 500, message: 'Error server!', error: error.message });
   }
 }
 
@@ -337,7 +310,7 @@ module.exports = {
     handlePaymentCallback,
     createPayment,
     disbursementPayment,
-    getAllPaymentByShop,
-    updatePaymentMethod,
-    getAllHistoryPayments
+    getAllPaymentMethods,
+    getAllHistoryPayments,
+    createTransfer
 }
