@@ -71,11 +71,13 @@ const disbursementPayment = async (req, res) => {
               description,
               fullName,
               note,
+              status: 'WITHDRAW',
               amount,
               number_telephone,
               NIM,
               type_payment: typePayment,
-              classRoom
+              classRoom,
+              recipient: NIM
           }
     
           const historyTransactionSave = new historyTransaction(dataHistory)
