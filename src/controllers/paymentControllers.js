@@ -95,7 +95,7 @@ const createPayment = async (req, res) => {
     const data = {
       "amount" : amount,
       "invoiceDuration" : 172800,
-      "externalId" : NIM + referenceId,
+      "externalId" : NIM+"OF_ID"+referenceId,
       "description" : description,
       "currency" : "IDR",
       "reminderTime" : 1,
@@ -108,7 +108,7 @@ const createPayment = async (req, res) => {
 
     if(response) {
       const dataHistory = {
-          history_id: NIM + referenceId,
+          history_id: NIM+"OF_ID"+referenceId,
           email,
           status: 'PENDING',
           description,
@@ -143,6 +143,10 @@ const updateDatabase = async (external_id, data) => {
 
       let DESCRIPTION 
       let NIM_TO
+      let NIM
+
+      const data = external_id.split('OF_ID')
+      NIM = data[0]
 
       if(data.description.includes('_')) {
         const parts = data.description.split('_');
@@ -155,7 +159,7 @@ const updateDatabase = async (external_id, data) => {
 
       if(DESCRIPTION === 'TOP-UP') {
           
-        const filterBalance = { NIM: external_id };
+        const filterBalance = { NIM };
           const dataBalance = await User.findOne(filterBalance)
           if(!dataBalance) {
             return { status: 404, message: 'User not found!' };
@@ -174,7 +178,7 @@ const updateDatabase = async (external_id, data) => {
           }
       } else if(DESCRIPTION === 'TRANSFER') {
 
-        const filterBalanceFROM = { NIM: external_id }
+        const filterBalanceFROM = { NIM }
         const filterBalanceTO = { NIM: NIM_TO }
 
         const dataBalanceFROM = await User.findOne(filterBalanceFROM)
@@ -203,7 +207,7 @@ const updateDatabase = async (external_id, data) => {
         }
       } else if(DESCRIPTION === 'Administrasi') {
         
-        const filterBalance = { NIM: external_id };
+        const filterBalance = { NIM };
         const dataBalance = await User.findOne(filterBalance)
         if(!dataBalance) {
           return { status: 404, message: 'User not found!' };
