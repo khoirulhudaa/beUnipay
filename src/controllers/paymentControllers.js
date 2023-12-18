@@ -215,25 +215,33 @@ const createTransfer = async (req, res) => {
     }
 
     const filterBalance = { NIM };
-
+    
     const dataBalance = await User.findOne(filterBalance)
-    if(!dataBalance) {
+    const dataBalanceTo = await User.findOne({ NIM: to })
+    if(!dataBalance || !dataBalanceTo) {
       return { status: 404, message: 'User not found!' };
     }
 
-    const addBalanceWithTopUp = {
+    const minusBalanceWithTopUp = {
       balance: dataBalance.balance - amount
+    };
+
+    const addBalanceWithTopUp = {
+      balance: dataBalanceTo.balance + amount
     };
 
     if(typePayment === 'Canteen') {
       canteenModel.updateOne({}, { $inc: { revenueCanteen: amount } })
+    }else if(typePayment === 'Transfer') {
+      const filterBalanceTo = { NIM: to };
+      await User.updateOne(filterBalanceTo, addBalanceWithTopUp);
     }
 
     const historyTransactionSave = new historyTransaction(dataHistory)
     const response = await historyTransactionSave.save()
     
     if(response) {
-      await User.updateOne(filterBalance, addBalanceWithTopUp);
+      await User.updateOne(filterBalance, minusBalanceWithTopUp);
       return res.json({ status: 200, message: 'Your payment success!', data: response})
     } else {
       return res.json({ status: 500, message: 'Failed create payment!!', data: response})
