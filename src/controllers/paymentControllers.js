@@ -88,7 +88,7 @@ const disbursementPayment = async (req, res) => {
           await historyTransactionSave.save()
           return res.json({status: 200, message: 'Withdraw successfully!', data: response});
         }
-          return res.json({ status: 404, message: 'User not found!' });
+          return res.json({ status: 404, message: 'Pengguna tidak ada!' });
       }
       
     } catch (error) {
@@ -119,7 +119,7 @@ const createPayment = async (req, res) => {
     const missingFields = requiredFields.filter(field => !req.body[field]);
     
     if (missingFields.length > 0) {
-        return res.json({ status: 401, message: 'Fields are missing'});
+        return res.json({ status: 401, message: 'Data masih kurang!'});
     }
     
     const referenceId = crypto.randomBytes(5).toString('hex')
@@ -162,11 +162,11 @@ const createPayment = async (req, res) => {
       return res.json({ status: 200, message: 'Your payment is still pending!', data: response})
 
     } else {
-      return res.json({ status: 500, message: 'Failed create payment!!', data: response})
+      return res.json({ status: 500, message: 'Pembayaran gagal!', data: response})
     }
     
   } catch (error) {
-    return res.json({ status: 500, message: 'Server error!', error: error.message})
+    return res.json({ status: 500, message: 'Server bermasalah!', error: error.message})
   }
 }
 
@@ -193,7 +193,7 @@ const createTransfer = async (req, res) => {
     const missingFields = requiredFields.filter(field => !req.body[field]);
     
     if (missingFields.length > 0) {
-        return res.json({ status: 401, message: 'Fields are missing'});
+        return res.json({ status: 401, message: 'Data masih kurang!'});
     }
     
     const referenceId = crypto.randomBytes(5).toString('hex')
@@ -219,7 +219,7 @@ const createTransfer = async (req, res) => {
     const dataBalance = await User.findOne(filterBalance)
     const dataBalanceTo = await User.findOne({ NIM: to })
     if(!dataBalance || !dataBalanceTo) {
-      return { status: 404, message: 'User not found!' };
+      return { status: 404, message: 'Pengguna tidak ada!' };
     }
 
     const minusBalanceWithTopUp = {
@@ -234,7 +234,11 @@ const createTransfer = async (req, res) => {
       canteenModel.updateOne({}, { $inc: { revenueCanteen: amount } })
     }else if(typePayment === 'Transfer') {
       const filterBalanceTo = { NIM: to };
-      await User.updateOne(filterBalanceTo, addBalanceWithTopUp);
+      if(NIM !== to) {
+        await User.updateOne(filterBalanceTo, addBalanceWithTopUp);
+      }else {
+        return res.json({ status: 500, message: 'Transfer gagal!', data: response})
+      }
     }
 
     const historyTransactionSave = new historyTransaction(dataHistory)
@@ -244,11 +248,11 @@ const createTransfer = async (req, res) => {
       await User.updateOne(filterBalance, minusBalanceWithTopUp);
       return res.json({ status: 200, message: 'Your payment success!', data: response})
     } else {
-      return res.json({ status: 500, message: 'Failed create payment!!', data: response})
+      return res.json({ status: 500, message: 'Pembayaran gagal!', data: response})
     }
     
   } catch (error) {
-    return res.json({ status: 500, message: 'Server error!', error: error.message})
+    return res.json({ status: 500, message: 'Server bermasalah!', error: error.message})
   }
 }
   
@@ -262,7 +266,7 @@ const updateDatabase = async (external_id, data) => {
 
     const dataBalance = await User.findOne(filterBalance)
     if(!dataBalance) {
-      return { status: 404, message: 'User not found!' };
+      return { status: 404, message: 'Pengguna tidak ada!' };
     }
 
     const addBalanceWithTopUp = {
@@ -279,7 +283,7 @@ const updateDatabase = async (external_id, data) => {
     }
           
   } catch (error) {
-      return { status: 500, message: 'Error server!', error: error.message }
+      return { status: 500, message: 'Server bermasalah!', error: error.message }
     }
 };
   
@@ -292,7 +296,7 @@ const getAllPaymentMethods = async (req, res) => {
       return res.json({ status: 200, message: 'All data payment methods', data: getPayment })
 
   } catch (error) {
-      return res.json({ status: 500, message: 'Error server!', error: error.message });
+      return res.json({ status: 500, message: 'Server bermasalah!', error: error.message });
   }
 }
 
@@ -313,7 +317,7 @@ const getAllHistoryPayments = async (req, res) => {
     return res.json({ status: 200, message: 'Successfully get history payments!', data: historyData }) 
 
   } catch (error) {
-    return res.json({ status: 500, message: 'Error server!', error: error.message });
+    return res.json({ status: 500, message: 'Server bermasalah!', error: error.message });
   }
 }
 
