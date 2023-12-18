@@ -1,4 +1,5 @@
 const historyTransaction = require('../models/historyTransaction');
+const withdrawTransaction = require('../models/withdrawTransaction');
 const User = require('../models/userModel')
 const crypto = require('crypto')
 const dotenv = require('dotenv');
@@ -23,8 +24,16 @@ const handlePaymentCallback = async (req, res) => {
 const disbursementPayment = async (req, res) => {
     try {
       const {
-        NIM,
         amount,
+        fullName,
+        number_telephone,
+        email,
+        description,
+        typePayment,
+        year,
+        NIM,
+        classRoom,
+        note,
         channelCode,
         accountNumber,
         accountHolderName,
@@ -55,8 +64,26 @@ const disbursementPayment = async (req, res) => {
         const existingData = await User.findOne(filter);
         
         if (existingData) {
-          const set = { balance: existingData.balance - amount };
-          await User.updateOne(filter, set)
+            const set = { balance: existingData.balance - amount };
+            await User.updateOne(filter, set)
+
+            const dataHistory = {
+              history_id: NIM+"OF_ID"+referenceId,
+              email,
+              description,
+              fullName,
+              note,
+              amount,
+              number_telephone,
+              year,
+              NIM,
+              type_payment: typePayment,
+              classRoom
+          }
+    
+          const historyTransactionSave = new withdrawTransaction(dataHistory)
+    
+          await historyTransactionSave.save()
           return res.json({status: 200, message: 'Withdraw successfully!', data: response});
         }
           return res.json({ status: 404, message: 'User not found!' });
