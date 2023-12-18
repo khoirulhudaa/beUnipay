@@ -95,7 +95,7 @@ const createPayment = async (req, res) => {
     const data = {
       "amount" : amount,
       "invoiceDuration" : 172800,
-      "externalId" : NIM,
+      "externalId" : NIM + referenceId,
       "description" : description,
       "currency" : "IDR",
       "reminderTime" : 1,
@@ -108,7 +108,7 @@ const createPayment = async (req, res) => {
 
     if(response) {
       const dataHistory = {
-          history_id: referenceId,
+          history_id: NIM + referenceId,
           email,
           status: 'PENDING',
           description,
@@ -167,10 +167,9 @@ const updateDatabase = async (external_id, data) => {
     
           if(data.status === 'PAID') {
             await User.updateOne(filterBalance, addBalanceWithTopUp);
-            await historyTransaction.updateOne(filterBalance, { status: 'PAID' })
+            await historyTransaction.updateOne({history_id: external_id}, { status: 'PAID' })
             return res.json({ status: 200, message: 'Success update status payment!', data: response})
           }else {
-            await historyTransaction.updateOne(filterBalance, { status: 'PAID' })
             return res.json({ status: 200, message: `Status payment is ${data.status}!` })
           }
       } else if(DESCRIPTION === 'TRANSFER') {
@@ -216,7 +215,7 @@ const updateDatabase = async (external_id, data) => {
   
         if(data.status === 'PAID') {
           await User.updateOne(filterBalance, addBalanceWithAdminTF);
-          await historyTransaction.updateOne(filterBalance, { status: 'PAID' })
+          await historyTransaction.updateOne({history_id: external_id}, { status: 'PAID' })
           
           return res.json({ status: 200, message: 'Success update status payment!', data: response})
         }else {
