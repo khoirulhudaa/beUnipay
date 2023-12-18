@@ -86,7 +86,7 @@ const disbursementPayment = async (req, res) => {
           const historyTransactionSave = new historyTransaction(dataHistory)
     
           await historyTransactionSave.save()
-          return res.json({status: 200, message: 'Withdraw successfully!', data: response});
+          return res.json({status: 200, message: 'Pencairan berhasil!', data: response});
         }
           return res.json({ status: 404, message: 'Pengguna tidak ada!' });
       }
@@ -251,7 +251,7 @@ const createTransfer = async (req, res) => {
     
     if(response) {
       await User.updateOne(filterBalance, minusBalanceWithTopUp);
-      return res.json({ status: 200, message: 'Your payment success!', data: response})
+      return res.json({ status: 200, message: 'Transaksi berhasil!', data: response})
     } else {
       return res.json({ status: 500, message: 'Pembayaran gagal!', data: response})
     }
