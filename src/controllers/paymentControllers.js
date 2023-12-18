@@ -247,7 +247,10 @@ const createTransfer = async (req, res) => {
 const updateDatabase = async (external_id, data) => {
   try {
 
-    const filterBalance = { NIM: external_id };
+    const external = external_id.split('OF_ID')
+    const resultExternal = external[0]
+
+    const filterBalance = { NIM: resultExternal };
 
     const dataBalance = await User.findOne(filterBalance)
     if(!dataBalance) {
