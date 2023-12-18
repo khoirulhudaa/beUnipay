@@ -225,15 +225,15 @@ const createTransfer = async (req, res) => {
       balance: dataBalance.balance + amount
     };
 
-    if(description === 'Kantin') {
+    if(typePayment === 'Canteen') {
       canteenModel.updateOne({}, { $inc: { revenueCanteen: amount } })
     }
 
-    await User.updateOne(filterBalance, addBalanceWithTopUp);
     const historyTransactionSave = new historyTransaction(dataHistory)
     const response = await historyTransactionSave.save()
-
+    
     if(response) {
+      await User.updateOne(filterBalance, addBalanceWithTopUp);
       return res.json({ status: 200, message: 'Your payment is still pending!', data: response})
     } else {
       return res.json({ status: 500, message: 'Failed create payment!!', data: response})
