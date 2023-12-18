@@ -170,6 +170,7 @@ const updateDatabase = async (external_id, data) => {
             await historyTransaction.updateOne(filterBalance, { status: 'PAID' })
             return res.json({ status: 200, message: 'Success update status payment!', data: response})
           }else {
+            await historyTransaction.updateOne(filterBalance, { status: 'PAID' })
             return res.json({ status: 200, message: `Status payment is ${data.status}!` })
           }
       } else if(DESCRIPTION === 'TRANSFER') {
