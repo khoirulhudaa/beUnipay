@@ -1,5 +1,4 @@
 const historyTransaction = require('../models/historyTransaction');
-const withdrawTransaction = require('../models/withdrawTransaction');
 const User = require('../models/userModel')
 const crypto = require('crypto')
 const dotenv = require('dotenv');
@@ -79,7 +78,7 @@ const disbursementPayment = async (req, res) => {
               classRoom
           }
     
-          const historyTransactionSave = new withdrawTransaction(dataHistory)
+          const historyTransactionSave = new historyTransaction(dataHistory)
     
           await historyTransactionSave.save()
           return res.json({status: 200, message: 'Withdraw successfully!', data: response});
