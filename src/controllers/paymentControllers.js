@@ -23,11 +23,11 @@ const handlePaymentCallback = async (req, res) => {
 const disbursementPayment = async (req, res) => {
     try {
       const {
-        user_id,
+        NIM,
         amount,
         channelCode,
         accountNumber,
-        fullName,
+        accountHolderName,
       } = req.body;
 
       const referenceId = crypto.randomBytes(20).toString('hex')
@@ -36,7 +36,7 @@ const disbursementPayment = async (req, res) => {
         "amount" : amount,
         "channelProperties" : {
           "accountNumber" : String(accountNumber),
-          "accountHolderName" : fullName
+          "accountHolderName" : accountHolderName
         },
         "description" : "Withdraw (balance)",
         "currency" : "IDR",
@@ -51,14 +51,15 @@ const disbursementPayment = async (req, res) => {
       })
         
       if(response) {
-        const filter = { user_id }
+        const filter = { NIM }
         const existingData = await User.findOne(filter);
         
         if (existingData) {
           const set = { balance: existingData.balance - amount };
           await User.updateOne(filter, set)
-          return res.json({status: 200, message: 'Withdraw successfully!!' , data: response});
+          return res.json({status: 200, message: 'Withdraw successfully!', data: response});
         }
+          return res.json({ status: 404, message: 'User not found!' });
       }
       
     } catch (error) {
