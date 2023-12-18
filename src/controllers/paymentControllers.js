@@ -215,26 +215,31 @@ const createTransfer = async (req, res) => {
     }
 
     const filterBalance = { NIM };
-    
+
     const dataBalance = await User.findOne(filterBalance)
-    const dataBalanceTo = await User.findOne({ NIM: to })
-    if(!dataBalance || !dataBalanceTo) {
+    
+    if(!dataBalance) {
       return { status: 404, message: 'Pengguna tidak ada!' };
     }
 
     const minusBalanceWithTopUp = {
       balance: dataBalance.balance - amount
     };
-
-    const addBalanceWithTopUp = {
-      balance: dataBalanceTo.balance + amount
-    };
-
+    
+    
     if(typePayment === 'Canteen') {
       canteenModel.updateOne({}, { $inc: { revenueCanteen: amount } })
     }else if(typePayment === 'Transfer') {
-      const filterBalanceTo = { NIM: to };
+      
       if(NIM !== to) {
+        const filterBalanceTo = { NIM: to };
+        
+        const dataUserTo = await User.findOne({ NIM: to })
+        const addBalanceWithTopUp = {
+          balance: dataUserTo.balance + amount
+        }
+
+        if(dataUserTo === 0) return res.json({ status: 404, message: 'Penerima tidak terdaftar!'})
         await User.updateOne(filterBalanceTo, addBalanceWithTopUp);
       }else {
         return res.json({ status: 500, message: 'Transaksi tidak sah!'})
