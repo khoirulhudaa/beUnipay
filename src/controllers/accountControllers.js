@@ -99,7 +99,7 @@ const signIn = async (req, res) => {
     }
 } 
 
-const getAccount = async (req, res) => {
+const getAccountById = async (req, res) => {
     try {
         const { user_id } = req.params
 
@@ -290,7 +290,7 @@ const resetPassword = async (req, res) => {
 module.exports = {
     signUp,
     signIn,
-    getAccount,
+    getAccountById,
     getAllUser,
     removeUser,
     updateUserAccount,

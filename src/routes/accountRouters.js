@@ -10,6 +10,9 @@ router.post('/signin', accountController.signIn)
 // Get list users
 router.get('/:fullName?', checkToken, accountController.getAllUser)
 
+// Get list users
+router.get('/:user_id?', checkToken, accountController.getAccountById)
+
 // Delete Account
 router.delete('/:user_id', checkToken, accountController.removeUser)
 
