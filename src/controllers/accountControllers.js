@@ -140,9 +140,10 @@ const getAllUser = async (req, res) => {
         const { fullName } = req.params
 
         const filter = {}
-        if(fullName) filter.prodi = prodi 
+        if(fullName) filter.fullName = fullName 
 
         const user = await User.find(filter)
+        if(user === 0) return res.json({ statua: 404, mesage: 'Pengguna tidak ada!' })
 
         return res.json({ status: 200, message: 'Successfully get users', data: user })
 
