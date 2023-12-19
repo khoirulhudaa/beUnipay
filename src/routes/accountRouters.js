@@ -11,7 +11,7 @@ router.post('/signin', accountController.signIn)
 router.get('/:fullName?', checkToken, accountController.getAllUser)
 
 // Get list users
-router.get('/:user_id?', checkToken, accountController.getAccountById)
+router.get('/user/:user_id?', checkToken, accountController.getAccountById)
 
 // Delete Account
 router.delete('/:user_id', checkToken, accountController.removeUser)
