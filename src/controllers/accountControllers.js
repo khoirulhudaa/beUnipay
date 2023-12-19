@@ -291,7 +291,7 @@ module.exports = {
     signUp,
     signIn,
     getAccountById,
-    getAllUser,
+    getAllUser, 
     removeUser,
     updateUserAccount,
     forgotPassword,
