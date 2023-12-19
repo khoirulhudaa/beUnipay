@@ -99,7 +99,7 @@ const signIn = async (req, res) => {
     }
 } 
 
-const getAccountById = async (req, res) => {
+const getAccount = async (req, res) => {
     try {
         const { user_id } = req.params
 
@@ -137,12 +137,10 @@ const removeUser = async (req, res) => {
 
 const getAllUser = async (req, res) => {
     try {
-        const { prodi, year, classRoom } = req.params
+        const { fullName } = req.params
 
         const filter = {}
-        if(prodi) filter.prodi = prodi 
-        if(year) filter.year = year 
-        if(classRoom) filter.classRoom = classRoom 
+        if(fullName) filter.prodi = prodi 
 
         const user = await User.find(filter)
 
@@ -291,7 +289,7 @@ const resetPassword = async (req, res) => {
 module.exports = {
     signUp,
     signIn,
-    getAccountById,
+    getAccount,
     getAllUser,
     removeUser,
     updateUserAccount,
