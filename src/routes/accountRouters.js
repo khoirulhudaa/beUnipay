@@ -8,7 +8,7 @@ router.post('/signup', accountController.signUp)
 router.post('/signin', accountController.signIn)
 
 // Get list users
-router.get('/:fullName?', checkToken, accountController.getAllUser)
+router.get('/list/user', checkToken, accountController.getAllUser)
 
 // Get list users
 router.get('/user/:user_id?', checkToken, accountController.getAccountById)
