@@ -1,11 +1,11 @@
-const multer = require('multer')
 const User = require('../models/userModel')
 const bcrypt = require('bcryptjs')
 const jwt = require('jsonwebtoken')
-const fs = require('fs')
 const path = require('path')
-const crypto = require('crypto')
 const nodemailer = require('nodemailer')
+const fs = require('fs')
+const crypto = require('crypto')
+const multer = require('multer')
 
 const uploadDir = path.join(__dirname, '../uploads')
 if (!fs.existsSync(uploadDir)) {
