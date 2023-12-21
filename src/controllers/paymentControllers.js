@@ -1,9 +1,11 @@
-const historyTransaction = require('../models/historyTransaction');
-const canteenModel = require('../models/canteenModel');
+const historyTransaction = require('../models/historyTransaction')
+const canteenModel = require('../models/canteenModel')
 const User = require('../models/userModel')
+const nodemailer = require('nodemailer')
+const toRupiah = require('../helpers/toRupiah')
 const crypto = require('crypto')
-const dotenv = require('dotenv');
-dotenv.config();
+const dotenv = require('dotenv')
+dotenv.config()
 
 const { Payout: PayoutClient, Invoice: InvoiceClient  } = require('xendit-node');
 const xenditPayoutClient = new PayoutClient({ secretKey: 'xnd_development_mkZ1EDWSeFNvcrZ2hkMGTZZuo3TSl9ar88LF8wHCcyffSZwGaqrSwwA70a8UyhS' });
@@ -194,6 +196,57 @@ const createTransfer = async (req, res) => {
     
     if (missingFields.length > 0) {
         return res.json({ status: 401, message: 'Data masih kurang!'});
+    }
+
+    if(to) {
+      const dataTo = await User.findOne({ NIM: to }) 
+      if(dataTo) {
+        const transporter = nodemailer.createTransport({
+            service: 'Gmail',
+            auth: {
+                user: 'muhammadkhoirulhuda111@gmail.com',
+                pass: 'pwdi hnbx usqq xwnh'
+            }
+        })
+
+        const cssPath = path.join(__dirname, '../styles/style.css');
+        const cssStyles = fs.readFileSync(cssPath, 'utf8');
+        
+        const emailContent = `
+            <!DOCTYPE html>
+            <html lang="en">
+                <head>
+                    <meta charset="UTF-8">
+                    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                    <style>
+                        ${cssStyles}
+                    </style>
+                </head>
+                <body>
+                    <div class="container">
+                        <h2>Ada kiriman uang ${fullName} :)</h2>
+                        <hr />
+                        <p>Nominal : ${toRupiah(amount)}</p>
+                        <hr />
+                        <br />
+                        <p>Sekarang saldo Unipay kamu sudah bertambah, gunakan saldo ini sebijak mungkin untuk keperluan kuliah kamu yaa.</p>
+                    </div>
+                </body>
+            </html>
+        `;
+
+        const mailOptions = {
+            to: dataTo.email,
+            from: 'muhammadkhoirulhuda111@gmail.com',
+            subject: 'Kiriman uang - Unipay',
+            html: emailContent
+        }
+
+        transporter.sendMail(mailOptions, async (err) => {
+            if(err) return res.json({ status: 500, message: 'Gagal kirim email saat transfer!', error: err.message })
+        })
+      } 
     }
     
     const referenceId = crypto.randomBytes(5).toString('hex')

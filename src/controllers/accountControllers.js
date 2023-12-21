@@ -1,4 +1,4 @@
-const multer = require('multer');
+const multer = require('multer')
 const User = require('../models/userModel')
 const bcrypt = require('bcryptjs')
 const jwt = require('jsonwebtoken')
@@ -7,9 +7,9 @@ const path = require('path')
 const crypto = require('crypto')
 const nodemailer = require('nodemailer')
 
-const uploadDir = path.join(__dirname, '../uploads');
+const uploadDir = path.join(__dirname, '../uploads')
 if (!fs.existsSync(uploadDir)) {
-    fs.mkdirSync(uploadDir, { recursive: true });
+    fs.mkdirSync(uploadDir, { recursive: true })
 }
 
 const storage = multer.diskStorage({
