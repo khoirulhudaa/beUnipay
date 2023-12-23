@@ -174,7 +174,7 @@ const createPayment = async (req, res) => {
   }
 }
 
-// Transfer
+// Transfer canteen and adminins
 
 const createTransfer = async (req, res) => {
   try {
@@ -199,53 +199,6 @@ const createTransfer = async (req, res) => {
     if (missingFields.length > 0) {
         return res.json({ status: 401, message: 'Data masih kurang!'});
     }
-    const dataTo = await User.findOne({ NIM: to }) 
-    if(dataTo) {
-      const transporter = nodemailer.createTransport({
-          service: 'Gmail',
-          auth: {
-              user: 'muhammadkhoirulhuda111@gmail.com',
-              pass: 'pwdi hnbx usqq xwnh'
-          }
-      })
-      
-      const cssPath = path.join(__dirname, '../styles/style.css');
-      const cssStyles = fs.readFileSync(cssPath, 'utf8');
-      
-      const emailContent = `
-          <!DOCTYPE html>
-          <html lang="en">
-              <head>
-                  <meta charset="UTF-8">
-                  <meta http-equiv="X-UA-Compatible" content="IE=edge">
-                  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                  <style>
-                      ${cssStyles}
-                  </style>
-              </head>
-              <body>
-                  <div class="container">
-                      <h2>Ada kiriman uang untuk kamu!</h2>
-                      <p style='color: black'>Pengirim : ${fullName}</p>
-                      <p style='color: black'>Nominal : ${toRupiah(amount)}</p>
-                  </div>
-              </body>
-          </html>
-      `;
-
-      const mailOptions = {
-          to: dataTo.email,
-          from: 'muhammadkhoirulhuda111@gmail.com',
-          subject: 'Kiriman uang - Unipay',
-          html: emailContent
-      }
-
-      transporter.sendMail(mailOptions, async (err) => {
-          if(err) return res.json({ status: 500, message: 'Gagal kirim email saat transfer!', error: err.message })
-      })
-    } else {
-      return res.json({ status: 404, message: 'Penerima belum ada!' })
-    } 
 
     const referenceId = crypto.randomBytes(5).toString('hex')
     
@@ -277,34 +230,99 @@ const createTransfer = async (req, res) => {
       balance: dataBalance.balance - amount
     };
     
-    
     if(typePayment === 'Canteen') {
-      canteenModel.updateOne({}, { $inc: { revenueCanteen: amount } })
-    }else if(typePayment === 'Transfer') {
+      const responseCanteen = canteenModel.updateOne({}, { $inc: { revenueCanteen: amount } })
+      const historyTransactionSave = new historyTransaction(dataHistory)
+      const response = await historyTransactionSave.save()
+      
+      if(response && responseCanteen) {
+        await User.updateOne(filterBalance, minusBalanceWithTopUp);
+        return res.json({ status: 200, message: 'Transaksi berhasil!', data: response})
+      } else {
+        return res.json({ status: 500, message: 'Pembayaran kantin gagal!', data: response})
+      }
+    } else if(typePayment === 'Transfer') {
       
       if(NIM !== to) {
         const filterBalanceTo = { NIM: to };
         
         const dataUserTo = await User.findOne({ NIM: to })
+        if(dataUserTo === 0) return res.json({ status: 404, message: 'Penerima tidak terdaftar!'})
+
         const addBalanceWithTopUp = {
           balance: dataUserTo.balance + amount
         }
-
-        if(dataUserTo === 0) return res.json({ status: 404, message: 'Penerima tidak terdaftar!'})
-        await User.updateOne(filterBalanceTo, addBalanceWithTopUp);
+        
+        if(dataUserTo) {
+          const transporter = nodemailer.createTransport({
+              service: 'Gmail',
+              auth: {
+                  user: 'muhammadkhoirulhuda111@gmail.com',
+                  pass: 'pwdi hnbx usqq xwnh'
+              }
+          })
+          
+          const cssPath = path.join(__dirname, '../styles/style.css');
+          const cssStyles = fs.readFileSync(cssPath, 'utf8');
+          
+          const emailContent = `
+              <!DOCTYPE html>
+              <html lang="en">
+                  <head>
+                      <meta charset="UTF-8">
+                      <meta http-equiv="X-UA-Compatible" content="IE=edge">
+                      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                      <style>
+                          ${cssStyles}
+                      </style>
+                  </head>
+                  <body>
+                      <div class="container">
+                          <h2>Ada kiriman uang untuk kamu!</h2>
+                          <p style='color: black'>Pengirim : ${fullName}</p>
+                          <p style='color: black'>Nominal : ${toRupiah(amount)}</p>
+                      </div>
+                  </body>
+              </html>
+          `;
+    
+          const mailOptions = {
+              to: dataUserTo.email,
+              from: 'muhammadkhoirulhuda111@gmail.com',
+              subject: 'Kiriman uang - Unipay',
+              html: emailContent
+          }
+    
+          transporter.sendMail(mailOptions, async (err) => {
+              if(err) return res.json({ status: 500, message: 'Gagal kirim email saat transfer!', error: err.message })
+              
+              await User.updateOne(filterBalanceTo, addBalanceWithTopUp);
+              await User.updateOne(filterBalance, minusBalanceWithTopUp);
+              
+              const historyTransactionSave = new historyTransaction(dataHistory)
+              const response = await historyTransactionSave.save()
+             
+              if(response) return res.json({ status: 200, message: 'Transaksi berhasil!' })
+              
+              res.json({ status: 500, message: 'Gagal transfer!', error: err.message })
+          })
+        } else {
+          return res.json({ status: 404, message: 'Penerima tidak ada!' })
+        } 
+       
       }else {
         return res.json({ status: 500, message: 'Transaksi tidak sah!'})
       }
-    }
-
-    const historyTransactionSave = new historyTransaction(dataHistory)
-    const response = await historyTransactionSave.save()
-    
-    if(response) {
-      await User.updateOne(filterBalance, minusBalanceWithTopUp);
-      return res.json({ status: 200, message: 'Transaksi berhasil!', data: response})
     } else {
-      return res.json({ status: 500, message: 'Pembayaran gagal!', data: response})
+      const historyTransactionSave = new historyTransaction(dataHistory)
+      const response = await historyTransactionSave.save()
+      
+      if(response) {
+        await User.updateOne(filterBalance, minusBalanceWithTopUp);
+        return res.json({ status: 200, message: 'Transaksi berhasil!', data: response})
+      } else {
+        return res.json({ status: 500, message: 'Pembayaran gagal!', data: response})
+      }
     }
     
   } catch (error) {
