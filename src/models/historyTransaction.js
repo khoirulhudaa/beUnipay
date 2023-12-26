@@ -13,6 +13,10 @@ const HistorySchema = new mongoose.Schema({
         type: Number,
         required: true
     },
+    code: {
+        type: String,
+        default: '-'
+    },
     NIM: {
         type: String,
         required: true
@@ -32,6 +36,10 @@ const HistorySchema = new mongoose.Schema({
     recipient: {
         type: String,
         required: true,
+    },
+    year: {
+        type: String,
+        required: true
     },
     prodi: {
         type: String,

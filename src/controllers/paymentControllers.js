@@ -86,6 +86,8 @@ const disbursementPayment = async (req, res) => {
               amount,
               number_telephone,
               NIM,
+              code: 'WITHDRAW_STUDENT',
+              prodi,
               type_payment: typePayment,
               classRoom,
               recipient: NIM
@@ -113,9 +115,15 @@ const disbursementPaymentAdmin = async (req, res) => {
         description,
         channelCode,
         accountNumber,
-        prodi,
         accountHolderName,
       } = req.body;
+
+      const requiredFields = ['amount', 'channelCode', 'accountNumber', 'accountHolderName']
+      const missingFields = requiredFields.filter(field => !req.body[field]);
+      
+      if (missingFields.length > 0) {
+          return res.json({ status: 401, message: 'Data masih kurang!'});
+      }
 
       const referenceId = crypto.randomBytes(20).toString('hex')
 
@@ -146,7 +154,6 @@ const disbursementPaymentAdmin = async (req, res) => {
             description,
             status: 'Pencairan dana kampus',
             amount,
-            prodi,
             channel_code: channelCode,
             account_number: String(accountNumber)
         }
@@ -225,6 +232,7 @@ const createPayment = async (req, res) => {
           number_telephone,
           year,
           NIM,
+          code: 'TOP-UP',
           prodi,
           recipient: to,
           type_payment: typePayment,
@@ -262,6 +270,7 @@ const createTransfer = async (req, res) => {
       NIM,
       to,
       classRoom,
+      code,
       note,
       prodi
     } = req.body;
@@ -285,6 +294,7 @@ const createTransfer = async (req, res) => {
         amount,
         number_telephone,
         year,
+        code,
         NIM,
         prodi,
         recipient: to,

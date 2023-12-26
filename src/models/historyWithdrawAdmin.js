@@ -21,10 +21,6 @@ const HistoryWDSchema = new mongoose.Schema({
         type: String,
         required: true
     },
-    prodi: {
-        type: String,
-        required: true
-    },
     channel_code: {
         type: String,
         required: true
