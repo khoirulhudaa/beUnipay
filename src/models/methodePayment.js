@@ -1,24 +1,20 @@
 const mongoose = require('mongoose');
 
 const paymentMethodSchema = new mongoose.Schema({
-    shop_id: {
-        type: String,
-        required: true
-    },
     payments: [
     {
-        bank_code: {
+        type_payment: {
             type: String,
             required: true
         },
-        account_number: {
+        minimum_payment: {
             type: Number,
             required: true,
             default: 0
         },
-        isEnabled: {
-            type: Boolean,
-            default: false
+        note_payment: {
+            type: String,
+            default: '-'
         }
     }
   ]

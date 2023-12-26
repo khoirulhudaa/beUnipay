@@ -3,24 +3,32 @@ const accountController = require('../controllers/accountControllers')
 const router = express.Router()
 const checkToken = require('../middlewares/verifyToken')
 
-// Sign consumer and seller
+// Auth User
 router.post('/signup', accountController.signUp)
 router.post('/signin', accountController.signIn)
 
-// Get list users
+// Get list Users
 router.get('/list/user', checkToken, accountController.getAllUser)
 
-// Get list users
+// Get list Users
 router.get('/user/:user_id?', checkToken, accountController.getAccountById)
 
 // Delete Account
-router.delete('/:user_id', checkToken, accountController.removeUser)
+router.delete('/list/user/:NIM', checkToken, accountController.removeUser)
 
 // Update Account
 router.put('/:user_id', checkToken, accountController.updateUserAccount)
 
-// Reset password
+// Reset Password
 router.post('/forgot-password', accountController.forgotPassword)
 router.put('/reset-password/:token', accountController.resetPassword)
+
+
+// =============================================================
+
+// Auth Admin
+
+router.post('/signup/admin', accountController.signUpAdmin)
+router.post('/signin/admin', accountController.signInAdmin)
 
 module.exports = router

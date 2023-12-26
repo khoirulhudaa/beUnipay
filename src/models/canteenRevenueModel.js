@@ -2,7 +2,7 @@ const mongoose = require('mongoose')
 
 const CanteenSchema = new mongoose.Schema({
     revenueCanteen: {
-        type: String,
+        type: Number,
         required: true
     }
 })

@@ -33,6 +33,10 @@ const HistorySchema = new mongoose.Schema({
         type: String,
         required: true,
     },
+    prodi: {
+        type: String,
+        required: true,
+    },
     date: {
         type: Date,
         default: new Date()

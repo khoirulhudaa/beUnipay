@@ -1,4 +1,6 @@
 const User = require('../models/userModel')
+const Admin = require('../models/adminModel')
+
 const bcrypt = require('bcryptjs')
 const jwt = require('jsonwebtoken')
 const path = require('path')
@@ -46,10 +48,10 @@ const signUp = async (req, res) => {
         const { email, password, gender, number_telephone, year, NIK, NIM, prodi, fullName, accountNumber } = req.body
        
         const equalUserByEmail = await User.findOne({ email })
-        if(equalUserByEmail) return res.json({ status: 400, message: 'Email already exist!' })
+        if(equalUserByEmail) return res.json({ status: 400, message: 'Email sudah terdaftar!' })
         
         const equalUserByNIM = await User.findOne({ NIM })
-        if(equalUserByNIM) return res.json({ status: 400, message: `User with NIM ${NIM} already exist!` })
+        if(equalUserByNIM) return res.json({ status: 400, message: `Pengguna dengan NIM ${NIM} sudah ada!` })
  
         const id = crypto.randomBytes(20).toString('hex')
 
@@ -72,10 +74,10 @@ const signUp = async (req, res) => {
         })
 
         await newUser.save()
-        return res.json({ status: 200, message: 'Successfully signup!' })
+        return res.json({ status: 200, message: 'Daftar berhasil!' })
 
     } catch (error) {
-        return res.json({ status: 500, message: 'Failed to signup!', error: error });
+        return res.json({ status: 500, message: 'Daftar gagal!', error: error });
     }
 }
 
@@ -84,18 +86,18 @@ const signIn = async (req, res) => {
         const {NIM, password} = req.body
 
         const user = await User.findOne({ NIM })
-        if(!user) return res.json({ status: 404, message: 'User not found!' })
+        if(!user) return res.json({ status: 404, message: 'Pengguna tidak ada!' })
 
         const isMatch = await bcrypt.compare(password, user.password);
         if (!isMatch) {
-            return res.json({ status: 401, message: 'Incorrect password!' });
+            return res.json({ status: 401, message: 'Password salah!' });
         }
 
         const token = jwt.sign({ user_id: user.user_id }, 'Unipay', { expiresIn: '2h' });
-        return res.json({ status: 200, token, data: user, message: 'Successfully signin!' });
+        return res.json({ status: 200, token, data: user, message: 'Berhasil masuk!' });
         
     } catch (error) {
-        return res.json({ status: 500, message: 'Failed to signin!', error: error.message });
+        return res.json({ status: 500, message: 'Masuk gagal!', error: error.message });
     }
 } 
 
@@ -104,34 +106,34 @@ const getAccountById = async (req, res) => {
         const { user_id } = req.params
 
         if(!user_id) {
-            return res.json({ status: 400, message: 'Invalid input!'});
+            return res.json({ status: 400, message: 'Kirim userID dahulu!'});
         }
 
         const resultAccount = await User.findOne({user_id})
         if(!resultAccount) {
-            return res.json({ status: 404, message: 'User not found!' });
+            return res.json({ status: 404, message: 'Pengguna tidak ada!' });
         }
         
-        return res.json({ status: 200, message: 'Successfully get data user account', data: resultAccount });
+        return res.json({ status: 200, message: 'Berhasil dapatkan data pengguna!', data: resultAccount });
 
     } catch (error) {
-        return res.json({ status: 500, message: 'Server error', error: error.message });
+        return res.json({ status: 500, message: 'Server bermasalah!', error: error.message });
     }
 }
 
 const removeUser = async (req, res) => {
     try {
-        const { user_id } = req.params
+        const { NIM } = req.params
 
-        const equalUser = await User.findOne({ user_id })
-        if(!equalUser) return res.json({ status: 404, message: 'User Not Found!' })
+        const equalUser = await User.findOne({ NIM })
+        if(!equalUser) return res.json({ status: 404, message: 'Pengguna tidak ada!' })
 
-        const deleteConsumer = await User.deleteOne({ user_id })
-        if(!deleteConsumer) return res.json({ status: 500, message: 'Failed to delete user!' })
+        const deleteConsumer = await User.deleteOne({ NIM })
+        if(!deleteConsumer) return res.json({ status: 500, message: 'Gagal hapus pengguna!' })
 
-        return res.json({ status: 200, message: "Successfully to delete user", data: equalUser })
+        return res.json({ status: 200, message: 'Berhasil hapus pengguna', data: equalUser })
     } catch (error) {
-        return res.json({ status: 500, message: 'Error server', error })
+        return res.json({ status: 500, message: 'Server bermasalah!', error })
     }
 }
 
@@ -145,10 +147,10 @@ const getAllUser = async (req, res) => {
         const user = await User.find(filter)
         if(user === 0) return res.json({ statua: 404, mesage: 'Pengguna tidak ada!' })
 
-        return res.json({ status: 200, message: 'Successfully get users', data: user })
+        return res.json({ status: 200, message: 'Berhasil dapatkan data pengguna!', data: user })
 
     } catch (error) {
-        return res.json({ status: 500, message: 'Error server', error })
+        return res.json({ status: 500, message: 'Server bermasalah!', error })
     }
 }
 
@@ -161,7 +163,7 @@ const updateUserAccount = async (req, res) => {
         const missingFields = requiredFields.filter(field => !req.body[field]);
         
         if (missingFields.length > 0) {
-            return res.json({ status: 401, message: 'Fields are missing'});
+            return res.json({ status: 401, message: 'Lengkapi data dahulu!'});
         }
         
         const filter = { user_id }
@@ -175,13 +177,13 @@ const updateUserAccount = async (req, res) => {
 
          const update = await User.updateOne(filter, set)
          if(update) {
-             return res.json({ status: 200, message: 'Successfully for update data account!', data: set })
+             return res.json({ status: 200, message: 'Berhasil perbarui data!', data: set })
          }else {
-             return res.json({ status: 500, message: 'Update account failed!', error: error.message })
+             return res.json({ status: 500, message: 'Perbarui data gagal!', error: error.message })
          }
 
     } catch (error) {
-        return res.json({ status: 500, message: 'Server error!', error: error.message })
+        return res.json({ status: 500, message: 'Server bermasalah!', error: error.message })
     }
 }
 
@@ -190,7 +192,7 @@ const forgotPassword = async (req, res) => {
         const { email } = req.body
 
         const equalEmail = await User.findOne({email})
-        if(!equalEmail) return res.json({ status: 404, message: 'User not found!' })
+        if(!equalEmail) return res.json({ status: 404, message: 'Pengguna tidak ada!' })
 
         const resetTokenPassword = crypto.randomBytes(8).toString('hex')
 
@@ -242,12 +244,12 @@ const forgotPassword = async (req, res) => {
         }
 
         transporter.sendMail(mailOptions, async (err) => {
-            if(err) return res.json({ status: 500, message: 'Email sending failed!', error: err.message })
-            return res.json({ status: 200, message: 'Email sent successfully!' })
+            if(err) return res.json({ status: 500, message: 'Kirim pesan email gagal', error: err.message })
+            return res.json({ status: 200, message: 'Berhasil kirim pesan email!' })
         })
 
     } catch (error) {
-        return res.json({ status: 500, message: 'Server error!', error: error.message })
+        return res.json({ status: 500, message: 'Server bermasalah!', error: error.message })
     }
 }
 
@@ -287,6 +289,57 @@ const resetPassword = async (req, res) => {
     }
 }
 
+// =================================================
+
+const signUpAdmin = async (req, res) => {
+    try {
+        const { email_admin, password, telephone_admin, admin_name } = req.body
+       
+        const equalUserByEmail = await User.findOne({ email_admin })
+        if(equalUserByEmail) return res.json({ status: 400, message: 'Email already exist!' })
+        
+        const id = crypto.randomBytes(20).toString('hex')
+
+        const salt = await bcrypt.genSalt(10)
+        const passwordHashGenerate = await bcrypt.hash(password, salt)
+
+        const newAdmin = new Admin({
+            email_admin,
+            password: passwordHashGenerate,
+            admin_id: id,
+            admin_name,
+            telephone_admin,
+            role: 'admin'
+        })
+
+        await newAdmin.save()
+        return res.json({ status: 200, message: 'Berhasil daftar admin!' })
+
+    } catch (error) {
+        return res.json({ status: 500, message: 'Proses daftar gagal!', error: error });
+    }
+}
+
+const signInAdmin = async (req, res) => {
+    try {
+        const {email_admin, password} = req.body
+
+        const admin = await Admin.findOne({ email_admin })
+        if(!admin) return res.json({ status: 404, message: 'Account not found!' })
+
+        const isMatch = await bcrypt.compare(password, admin.password);
+        if (!isMatch) {
+            return res.json({ status: 401, message: 'Incorrect password!' });
+        }
+
+        const token = jwt.sign({ admin_id: admin.admin_id }, 'Unipay', { expiresIn: '2h' });
+        return res.json({ status: 200, token, data: admin, message: 'Berhasil masuk!' });
+
+    } catch (error) {
+        return res.json({ status: 500, message: 'Proses masuk gagal!', error: error.message });
+    }
+}
+
 module.exports = {
     signUp,
     signIn,
@@ -296,5 +349,7 @@ module.exports = {
     updateUserAccount,
     forgotPassword,
     resetPassword,
+    signUpAdmin,
+    signInAdmin,
     upload
 }

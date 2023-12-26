@@ -1,5 +1,8 @@
 const historyTransaction = require('../models/historyTransaction')
-const canteenModel = require('../models/canteenModel')
+const historyWithdrawAdmin = require('../models/historyWithdrawAdmin')
+const canteenModel = require('../models/canteenRevenueModel')
+const adminRevenueModel = require('../models/adminRevenueModel')
+const paymentMethodModel = require('../models/methodePayment')
 const User = require('../models/userModel')
 const nodemailer = require('nodemailer')
 const path = require('path')
@@ -9,9 +12,10 @@ const crypto = require('crypto')
 const toRupiah = require('../helpers/toRupiah')
 dotenv.config()
 
-const { Payout: PayoutClient, Invoice: InvoiceClient  } = require('xendit-node');
+const { Payout: PayoutClient, Invoice: InvoiceClient, Balance: BalanceClient  } = require('xendit-node');
 const xenditPayoutClient = new PayoutClient({ secretKey: 'xnd_development_mkZ1EDWSeFNvcrZ2hkMGTZZuo3TSl9ar88LF8wHCcyffSZwGaqrSwwA70a8UyhS' });
 const xenditInvoice = new InvoiceClient({secretKey: 'xnd_development_mkZ1EDWSeFNvcrZ2hkMGTZZuo3TSl9ar88LF8wHCcyffSZwGaqrSwwA70a8UyhS'})
+const xenditBalanceClient = new BalanceClient({secretKey: 'xnd_development_mkZ1EDWSeFNvcrZ2hkMGTZZuo3TSl9ar88LF8wHCcyffSZwGaqrSwwA70a8UyhS'})
 
 const handlePaymentCallback = async (req, res) => {
     try {
@@ -99,6 +103,72 @@ const disbursementPayment = async (req, res) => {
       return res.json({ status: 500, error: 'Server Error', message: error.message });
     }
 };
+  
+// Withdraw for admin IKMI
+
+const disbursementPaymentAdmin = async (req, res) => {
+    try {
+      const {
+        amount,
+        description,
+        channelCode,
+        accountNumber,
+        prodi,
+        accountHolderName,
+      } = req.body;
+
+      const referenceId = crypto.randomBytes(20).toString('hex')
+
+      const data = {
+        "amount" : amount,
+        "channelProperties" : {
+          "accountNumber" : String(accountNumber),
+          "accountHolderName" : accountHolderName
+        },
+        "description" : "Withdraw (balance)",
+        "currency" : "IDR",
+        "type" : "DIRECT_DISBURSEMENT",
+        "referenceId" : referenceId,
+        "channelCode" : channelCode
+      }
+      
+      const response = await xenditPayoutClient.createPayout({
+          idempotencyKey: referenceId,
+          data
+      })
+        
+      if(response) {
+        
+        const responseAdminRevenue = await adminRevenueModel.updateOne({}, { $inc: { revenueAdmin: -amount } })
+
+        const dataHistory = {
+            history_id: referenceId,
+            description,
+            status: 'Pencairan dana kampus',
+            amount,
+            prodi,
+            channel_code: channelCode,
+            account_number: String(accountNumber)
+        }
+
+        const historyTransactionSave = new historyWithdrawAdmin(dataHistory)
+
+        const saveHistory = await historyTransactionSave.save()
+
+        if(!responseAdminRevenue || !saveHistory) {
+          return res.json({status: 500, message: 'Pencairan gagak!', dataRevenue: responseAdminRevenue, dataSave: saveHistory });
+        }
+
+        return res.json({status: 200, message: 'Pencairan berhasil!', data: response});
+        
+      } else {
+        return res.json({ status: 500, error: 'Proses pencairan terhambat!' });
+      }
+      
+    } catch (error) {
+      return res.json({ status: 500, error: 'Server Error', message: error.message });
+    }
+};
 
 // Top-up
 
@@ -113,6 +183,7 @@ const createPayment = async (req, res) => {
       description,
       typePayment,
       year,
+      prodi,
       NIM,
       to,
       classRoom,
@@ -154,6 +225,7 @@ const createPayment = async (req, res) => {
           number_telephone,
           year,
           NIM,
+          prodi,
           recipient: to,
           type_payment: typePayment,
           classRoom
@@ -174,7 +246,7 @@ const createPayment = async (req, res) => {
   }
 }
 
-// Transfer canteen and adminins
+// Transfer canteen and administration
 
 const createTransfer = async (req, res) => {
   try {
@@ -190,7 +262,8 @@ const createTransfer = async (req, res) => {
       NIM,
       to,
       classRoom,
-      note
+      note,
+      prodi
     } = req.body;
 
     const requiredFields = ['amount', 'classRoom', 'NIM', 'typePayment'];
@@ -213,6 +286,7 @@ const createTransfer = async (req, res) => {
         number_telephone,
         year,
         NIM,
+        prodi,
         recipient: to,
         type_payment: typePayment,
         classRoom
@@ -231,7 +305,7 @@ const createTransfer = async (req, res) => {
     };
     
     if(typePayment === 'Canteen') {
-      const responseCanteen = canteenModel.updateOne({}, { $inc: { revenueCanteen: amount } })
+      const responseCanteen = await canteenModel.findOneAndUpdate({}, { $inc: { revenueCanteen: amount } }, { new: true, upsert: true })
       const historyTransactionSave = new historyTransaction(dataHistory)
       const response = await historyTransactionSave.save()
       
@@ -314,19 +388,47 @@ const createTransfer = async (req, res) => {
         return res.json({ status: 500, message: 'Transaksi tidak sah!'})
       }
     } else {
+      const responseAdminRevenue = await adminRevenueModel.findOneAndUpdate({}, { $inc: { revenueAdmin: amount } }, { new: true, upsert: true });
       const historyTransactionSave = new historyTransaction(dataHistory)
       const response = await historyTransactionSave.save()
-      
-      if(response) {
+      console.log(responseAdminRevenue)
+      if(response && responseAdminRevenue) {
         await User.updateOne(filterBalance, minusBalanceWithTopUp);
         return res.json({ status: 200, message: 'Transaksi berhasil!', data: response})
       } else {
-        return res.json({ status: 500, message: 'Pembayaran gagal!', data: response})
+        return res.json({ status: 500, message: 'Pembayaran gagal!', dataTransaction: response, dataRevenue: responseAdminRevenue})
       }
     }
     
   } catch (error) {
     return res.json({ status: 500, message: 'Server bermasalah!', error: error.message})
+  }
+}
+
+const getBalanceUnipay = async (req, res) => {
+  try {
+    const response = await xenditBalanceClient.getBalance({})
+    return res.json({ status: 200, message: 'Total saldo pada unipay!', data: response })
+  } catch (error) {
+    return res.json({ status: 500, message: 'Server bermasalah!', error: error.message})
+  }
+}
+
+const getRevenueAdministration = async (req, res) => {
+  try {
+    const response = await adminRevenueModel.find()
+    return res.json({ status: 200, message: 'Saldo ikmi saat ini!', data: response })
+  } catch (error) {
+    return res.json({ status: 205000, message: 'Server bermasalah!', error: error.message })
+  }
+}
+
+const getRevenueCanteen = async (req, res) => {
+  try {
+    const response = await canteenModel.find()
+    return res.json({ status: 200, message: 'Saldo canteen saat ini!', data: response })
+  } catch (error) {
+    return res.json({ status: 205000, message: 'Server bermasalah!', error: error.message })
   }
 }
   
@@ -395,11 +497,90 @@ const getAllHistoryPayments = async (req, res) => {
   }
 }
 
+const getAllHistoryWDAdmin = async (req, res) => {
+  try {
+    const response = await historyWithdrawAdmin.find()
+    if(response === 0) return res.json({ status: 404, message: 'Riwayat kosong!' })
+  
+    return res.json({ status: 200, message: 'Berhasil dapatkan riwayat pencairan!', data: response });
+  
+  } catch (error) {
+    return res.json({ status: 500, message: 'Server bermasalah!', error: error.message });
+  }
+}
+
+const updatePaymentMethod = async (req, res) => {
+  try {
+    const updates = req.body;
+
+    if (!updates || !Array.isArray(updates)) {
+      return res.status(400).json({ status: 400, message: 'Data harus array!', data: updates });
+    }
+
+    const updatePromises = updates.map(async (update) => {
+      const { type_payment, minimum_payment, note } = update;
+
+      // Cek apakah elemen dengan type_payment sudah ada dalam array payments
+      const existingPayment = await paymentMethodModel.findOne({ 'payments.type_payment': type_payment });
+
+      if (existingPayment) {
+        // Jika elemen sudah ada, lakukan pembaruan
+        const result = await paymentMethodModel.updateOne(
+          { 'payments.type_payment': type_payment },
+          {
+            $set: {
+              'payments.$.minimum_payment': minimum_payment,
+              'payments.$.note_payment': note,
+            },
+          },
+          { new: true }
+        );
+        return result;
+      } else {
+        // Jika elemen belum ada, lakukan penambahan baru
+        const result = await paymentMethodModel.updateOne(
+          {},
+          {
+            $push: {
+              payments: {
+                type_payment,
+                minimum_payment,
+                note_payment: note,
+              },
+            },
+          },
+          { upsert: true, new: true }
+        );
+        return result;
+      }
+    });
+
+    const results = await Promise.all(updatePromises);
+
+    console.log('results', results);
+
+    if (!results) {
+      return res.json({ status: 404, message: 'Tidak ada data diperbarui!', data: updates });
+    }
+
+    return res.json({ status: 200, message: 'Berhasil perbarui sistem pembayaran!', data: updates });
+  } catch (error) {
+    return res.json({ status: 500, message: 'Server bermasalah!', error: error.message });
+  }
+};
+
+
 module.exports = {
     handlePaymentCallback,
     createPayment,
     disbursementPayment,
+    disbursementPaymentAdmin,
     getAllPaymentMethods,
     getAllHistoryPayments,
-    createTransfer
+    createTransfer,
+    getBalanceUnipay,
+    getRevenueAdministration,
+    getRevenueCanteen,
+    getAllHistoryWDAdmin,
+    updatePaymentMethod
 }
