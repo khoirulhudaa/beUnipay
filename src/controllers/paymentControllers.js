@@ -43,6 +43,7 @@ const disbursementPayment = async (req, res) => {
         NIM,
         classRoom,
         note,
+        prodi,
         channelCode,
         accountNumber,
         accountHolderName,
