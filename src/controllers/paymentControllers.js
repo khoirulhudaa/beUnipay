@@ -45,9 +45,17 @@ const disbursementPayment = async (req, res) => {
         note,
         prodi,
         channelCode,
+        year,
         accountNumber,
         accountHolderName,
       } = req.body;
+
+      const requiredFields = ['amount', 'year', 'prodi', 'accountHolderName', 'accountNumber', 'NIM', 'classRoom', 'typePayment', 'email', 'fullName']
+      const missingFields = requiredFields.filter(field => !req.body[field]);
+      
+      if (missingFields.length > 0) {
+          return res.json({ status: 401, message: 'Data masih kurang!'});
+      }
 
       const referenceId = crypto.randomBytes(20).toString('hex')
 
@@ -89,6 +97,7 @@ const disbursementPayment = async (req, res) => {
               NIM,
               code: 'WITHDRAW_STUDENT',
               prodi,
+              year,
               type_payment: typePayment,
               classRoom,
               recipient: NIM
